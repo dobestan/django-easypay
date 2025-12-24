@@ -18,7 +18,7 @@ from django.views.decorators.csrf import csrf_exempt
 
 from easypay.client import EasyPayClient
 from easypay.exceptions import EasyPayError
-from easypay.utils import get_client_ip, get_device_type, get_user_agent
+from easypay.utils import get_client_ip, get_device_type_code, get_user_agent
 
 from .models import SandboxPayment
 
@@ -117,7 +117,7 @@ class SandboxPaymentView(View):
                 return_url=callback_url,
                 goods_name=goods_name,
                 customer_name="테스트 고객",
-                device_type=get_device_type(request),
+                device_type_code=get_device_type_code(request),
             )
 
             auth_page_url = result.get("authPageUrl")
@@ -309,7 +309,9 @@ class SandboxCallbackView(View):
                     )
 
                 client = EasyPayClient()
-                result = client.approve_payment(payment=payment, auth_id=auth_id)
+                result = client.approve_payment(
+                    payment=payment, authorization_id=auth_id
+                )
 
                 # Extract payment info
                 pg_tid = result.get("pgTid", "")
@@ -319,8 +321,8 @@ class SandboxCallbackView(View):
                 # Update payment (inside transaction for atomicity)
                 payment.mark_as_paid(
                     pg_tid=pg_tid,
-                    auth_id=auth_id,
-                    pay_method=payment_info.get("payMethodTypeCode", ""),
+                    authorization_id=auth_id,
+                    pay_method_type_code=payment_info.get("payMethodTypeCode", ""),
                     card_name=card_info.get("cardName", ""),
                     card_no=card_info.get("cardNo", ""),
                 )

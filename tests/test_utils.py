@@ -3,7 +3,7 @@ Tests for EasyPay utility functions.
 
 Tests cover:
 - get_client_ip: CloudFlare, Nginx, X-Forwarded-For, direct connection
-- get_device_type: Mobile vs PC detection from User-Agent
+- get_device_type_code: Mobile vs PC detection from User-Agent
 - get_user_agent: User-Agent extraction and truncation
 - mask_card_number: Card number masking for display
 - format_amount: Korean Won formatting
@@ -15,7 +15,7 @@ import pytest
 from easypay.utils import (
     format_amount,
     get_client_ip,
-    get_device_type,
+    get_device_type_code,
     get_user_agent,
     mask_card_number,
     normalize_phone,
@@ -97,12 +97,12 @@ class TestGetClientIP:
 
 
 # ============================================================
-# get_device_type Tests
+# get_device_type_code Tests
 # ============================================================
 
 
-class TestGetDeviceType:
-    """Tests for mobile vs PC device detection."""
+class TestGetDeviceTypeCode:
+    """Tests for mobile vs PC device detection (EasyPay deviceTypeCode)."""
 
     # Mobile User-Agents
     @pytest.mark.parametrize(
@@ -123,8 +123,8 @@ class TestGetDeviceType:
         request = request_factory.get("/")
         request.META["HTTP_USER_AGENT"] = user_agent
 
-        device_type = get_device_type(request)
-        assert device_type == "MOBILE"
+        device_type_code = get_device_type_code(request)
+        assert device_type_code == "MOBILE"
 
     # PC User-Agents
     @pytest.mark.parametrize(
@@ -141,16 +141,16 @@ class TestGetDeviceType:
         request = request_factory.get("/")
         request.META["HTTP_USER_AGENT"] = user_agent
 
-        device_type = get_device_type(request)
-        assert device_type == "PC"
+        device_type_code = get_device_type_code(request)
+        assert device_type_code == "PC"
 
     def test_empty_user_agent_returns_pc(self, request_factory):
         """Empty or missing User-Agent should default to PC."""
         request = request_factory.get("/")
         request.META["HTTP_USER_AGENT"] = ""
 
-        device_type = get_device_type(request)
-        assert device_type == "PC"
+        device_type_code = get_device_type_code(request)
+        assert device_type_code == "PC"
 
     def test_missing_user_agent_returns_pc(self, request_factory):
         """Missing User-Agent header should default to PC."""
@@ -158,26 +158,26 @@ class TestGetDeviceType:
         if "HTTP_USER_AGENT" in request.META:
             del request.META["HTTP_USER_AGENT"]
 
-        device_type = get_device_type(request)
-        assert device_type == "PC"
+        device_type_code = get_device_type_code(request)
+        assert device_type_code == "PC"
 
     def test_case_insensitive_detection(self, request_factory):
         """Mobile detection should be case-insensitive."""
         request = request_factory.get("/")
         request.META["HTTP_USER_AGENT"] = "Mozilla/5.0 (IPHONE; CPU iPhone OS)"
 
-        device_type = get_device_type(request)
-        assert device_type == "MOBILE"
+        device_type_code = get_device_type_code(request)
+        assert device_type_code == "MOBILE"
 
     def test_fixture_mobile_request(self, mock_mobile_request):
         """Test with mock_mobile_request fixture."""
-        device_type = get_device_type(mock_mobile_request)
-        assert device_type == "MOBILE"
+        device_type_code = get_device_type_code(mock_mobile_request)
+        assert device_type_code == "MOBILE"
 
     def test_fixture_pc_request(self, mock_request):
         """Test with mock_request fixture (PC)."""
-        device_type = get_device_type(mock_request)
-        assert device_type == "PC"
+        device_type_code = get_device_type_code(mock_request)
+        assert device_type_code == "PC"
 
 
 # ============================================================

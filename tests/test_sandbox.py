@@ -101,7 +101,7 @@ class TestSandboxPaymentModel:
 
         # Check AbstractPayment fields exist
         assert hasattr(payment, "pg_tid")
-        assert hasattr(payment, "auth_id")
+        assert hasattr(payment, "authorization_id")
         assert hasattr(payment, "status")
         assert hasattr(payment, "paid_at")
         assert hasattr(payment, "client_ip")
@@ -110,12 +110,12 @@ class TestSandboxPaymentModel:
     def test_mark_as_paid(self):
         """mark_as_paid should update status and paid_at."""
         payment = SandboxPayment.objects.create(amount=Decimal("10000"))
-        payment.mark_as_paid(pg_tid="TEST_TID_123", auth_id="AUTH123")
+        payment.mark_as_paid(pg_tid="TEST_TID_123", authorization_id="AUTH123")
 
         payment.refresh_from_db()
         assert payment.status == PaymentStatus.COMPLETED
         assert payment.pg_tid == "TEST_TID_123"
-        assert payment.auth_id == "AUTH123"
+        assert payment.authorization_id == "AUTH123"
         assert payment.paid_at is not None
 
     def test_mark_as_failed(self):
@@ -406,7 +406,7 @@ class TestSandboxCallbackView:
         payment.refresh_from_db()
         assert payment.status == PaymentStatus.COMPLETED
         assert payment.pg_tid == "EASYPAY_TID_12345"
-        assert payment.auth_id == "AUTH123456"
+        assert payment.authorization_id == "AUTH123456"
         assert payment.card_name == "신한카드"
 
     @override_settings(DEBUG=True)

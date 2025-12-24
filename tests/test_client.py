@@ -110,7 +110,7 @@ class TestRegisterPayment:
             return_url="https://example.com/callback/",
             goods_name="테스트 상품",
             customer_name="홍길동",
-            device_type="PC",
+            device_type_code="PC",
         )
 
         assert result["resCd"] == "0000"
@@ -133,7 +133,7 @@ class TestRegisterPayment:
             payment=payment,
             return_url="https://example.com/callback/",
             goods_name="테스트 상품",
-            device_type="MOBILE",
+            device_type_code="MOBILE",
         )
 
         # Verify request payload
@@ -239,7 +239,7 @@ class TestApprovePayment:
 
         result = easypay_client.approve_payment(
             payment=payment,
-            auth_id="AUTH_ID_FROM_CALLBACK",
+            authorization_id="AUTH_ID_FROM_CALLBACK",
         )
 
         assert result["resCd"] == "0000"
@@ -259,7 +259,7 @@ class TestApprovePayment:
             status=200,
         )
 
-        easypay_client.approve_payment(payment=payment, auth_id="AUTH123")
+        easypay_client.approve_payment(payment=payment, authorization_id="AUTH123")
 
         request_body = responses.calls[0].request.body.decode()
         assert "shopTransactionId" in request_body
@@ -282,7 +282,7 @@ class TestApprovePayment:
         )
 
         with pytest.raises(PaymentApprovalError) as exc_info:
-            easypay_client.approve_payment(payment=payment, auth_id="AUTH123")
+            easypay_client.approve_payment(payment=payment, authorization_id="AUTH123")
 
         assert exc_info.value.code == "E501"
 
@@ -304,7 +304,7 @@ class TestApprovePayment:
         payment_approved.connect(receiver)
 
         try:
-            easypay_client.approve_payment(payment=payment, auth_id="AUTH123")
+            easypay_client.approve_payment(payment=payment, authorization_id="AUTH123")
 
             assert receiver.called
             call_kwargs = receiver.call_args[1]
@@ -335,7 +335,9 @@ class TestApprovePayment:
 
         try:
             with pytest.raises(PaymentApprovalError):
-                easypay_client.approve_payment(payment=payment, auth_id="AUTH123")
+                easypay_client.approve_payment(
+                    payment=payment, authorization_id="AUTH123"
+                )
 
             assert receiver.called
             call_kwargs = receiver.call_args[1]
@@ -368,7 +370,7 @@ class TestCancelPayment:
 
         result = easypay_client.cancel_payment(
             payment=completed_payment,
-            cancel_type="40",
+            cancel_type_code="40",
         )
 
         assert result["resCd"] == "0000"
@@ -391,7 +393,7 @@ class TestCancelPayment:
 
         result = easypay_client.cancel_payment(
             payment=completed_payment,
-            cancel_type="41",
+            cancel_type_code="41",
             cancel_amount=10000,
         )
 
@@ -418,7 +420,7 @@ class TestCancelPayment:
         with pytest.raises(PaymentCancellationError) as exc_info:
             easypay_client.cancel_payment(
                 payment=completed_payment,
-                cancel_type="41",
+                cancel_type_code="41",
                 cancel_amount=None,
             )
 
@@ -511,7 +513,7 @@ class TestCancelPayment:
             assert receiver.called
             call_kwargs = receiver.call_args[1]
             assert call_kwargs["payment"] == completed_payment
-            assert call_kwargs["cancel_type"] == "40"
+            assert call_kwargs["cancel_type_code"] == "40"
             assert call_kwargs["cancel_amount"] == int(completed_payment.amount)
         finally:
             payment_cancelled.disconnect(receiver)
@@ -835,7 +837,7 @@ class TestPaymentFlow:
 
         approve_result = easypay_client.approve_payment(
             payment=payment,
-            auth_id="AUTH_ID_FROM_CALLBACK",
+            authorization_id="AUTH_ID_FROM_CALLBACK",
         )
 
         assert approve_result["pgTid"] == "PGTID1234567890123456789012"
@@ -868,7 +870,7 @@ class TestPaymentFlow:
 
         approve_result = easypay_client.approve_payment(
             payment=payment,
-            auth_id="AUTH_ID",
+            authorization_id="AUTH_ID",
         )
 
         # Update payment with PG data

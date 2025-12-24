@@ -69,7 +69,7 @@ class TestAbstractPaymentFields:
         assert payment.amount == Decimal("10000")
         assert payment.status == PaymentStatus.PENDING
         assert payment.pg_tid == ""
-        assert payment.auth_id == ""
+        assert payment.authorization_id == ""
         assert payment.card_name == ""
         assert payment.card_no == ""
         assert payment.client_ip is None
@@ -84,8 +84,8 @@ class TestAbstractPaymentFields:
             amount=Decimal("29900"),
             status=PaymentStatus.COMPLETED,
             pg_tid="PGTID1234567890",
-            auth_id="AUTH1234567890",
-            pay_method="11",
+            authorization_id="AUTH1234567890",
+            pay_method_type_code="11",
             card_name="신한카드",
             card_no="1234-****-****-5678",
             client_ip="192.168.1.100",
@@ -95,8 +95,8 @@ class TestAbstractPaymentFields:
 
         payment.refresh_from_db()
         assert payment.pg_tid == "PGTID1234567890"
-        assert payment.auth_id == "AUTH1234567890"
-        assert payment.pay_method == "11"
+        assert payment.authorization_id == "AUTH1234567890"
+        assert payment.pay_method_type_code == "11"
         assert payment.card_name == "신한카드"
         assert payment.card_no == "1234-****-****-5678"
         assert payment.client_ip == "192.168.1.100"
@@ -224,19 +224,19 @@ class TestPaymentStateTransitions:
         """mark_as_paid stores PG transaction data."""
         payment.mark_as_paid(
             pg_tid="PGTID12345",
-            auth_id="AUTH12345",
+            authorization_id="AUTH12345",
             card_name="신한카드",
             card_no="1234-****-****-5678",
-            pay_method="11",
+            pay_method_type_code="11",
         )
 
         payment.refresh_from_db()
         assert payment.status == PaymentStatus.COMPLETED
         assert payment.pg_tid == "PGTID12345"
-        assert payment.auth_id == "AUTH12345"
+        assert payment.authorization_id == "AUTH12345"
         assert payment.card_name == "신한카드"
         assert payment.card_no == "1234-****-****-5678"
-        assert payment.pay_method == "11"
+        assert payment.pay_method_type_code == "11"
 
     def test_mark_as_paid_ignores_invalid_fields(self, payment):
         """mark_as_paid ignores fields that don't exist on the model."""

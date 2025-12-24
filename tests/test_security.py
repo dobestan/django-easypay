@@ -110,13 +110,15 @@ class TestCSVExportSecurity:
         assert "1234-5678-9012-3456" not in content
 
     @pytest.mark.django_db
-    def test_csv_export_excludes_auth_id(self, model_admin, request_factory, mock_user):
-        """CSV export should not include auth_id field."""
+    def test_csv_export_excludes_authorization_id(
+        self, model_admin, request_factory, mock_user
+    ):
+        """CSV export should not include authorization_id field."""
         payment = SandboxPayment.objects.create(
             order_id=f"TEST-{uuid.uuid4().hex[:8].upper()}",
             amount=Decimal("10000"),
             status=PaymentStatus.COMPLETED,
-            auth_id="SENSITIVE_AUTH_TOKEN_12345",
+            authorization_id="SENSITIVE_AUTH_TOKEN_12345",
             pg_tid="PGTID123456",
         )
 
@@ -128,7 +130,7 @@ class TestCSVExportSecurity:
 
         content = response.content.decode("utf-8")
 
-        # auth_id should NOT appear in CSV
+        # authorization_id should NOT appear in CSV (sensitive PG token)
         assert "SENSITIVE_AUTH_TOKEN_12345" not in content
         # pg_tid should appear (safe to export)
         assert "PGTID123456" in content
@@ -297,8 +299,8 @@ class TestSensitiveDataLogging:
         assert "SECRET_TOKEN" not in caplog.text
 
     @responses.activate
-    def test_auth_id_not_logged_in_approval(self, caplog):
-        """auth_id should not appear in approval logs."""
+    def test_authorization_id_not_logged_in_approval(self, caplog):
+        """authorization_id should not appear in approval logs."""
 
         client = EasyPayClient(
             mall_id="T0021792",
@@ -330,15 +332,15 @@ class TestSensitiveDataLogging:
         payment.amount = Decimal("10000")
         payment.order_id = "TEST-ORDER"
 
-        sensitive_auth_id = "SUPER_SECRET_AUTH_TOKEN_XYZ123"
+        sensitive_authorization_id = "SUPER_SECRET_AUTH_TOKEN_XYZ123"
 
         import logging
 
         with caplog.at_level(logging.DEBUG):
-            client.approve_payment(payment, sensitive_auth_id)
+            client.approve_payment(payment, sensitive_authorization_id)
 
-        # auth_id should NOT appear in logs
-        assert sensitive_auth_id not in caplog.text
+        # authorization_id should NOT appear in logs (sensitive PG token)
+        assert sensitive_authorization_id not in caplog.text
 
 
 class TestAdminAuditLogging:

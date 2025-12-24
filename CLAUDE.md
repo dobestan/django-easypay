@@ -1,15 +1,48 @@
 # Django EasyPay 모듈화 계획
 
-## 결정 사항 (2024-12-23 확정)
+## 결정 사항 (2024-12-24 업데이트)
 
 | 항목 | 결정 |
 |------|------|
 | **호스팅** | GitHub Private (`dobestan/django-easypay`) |
 | **설치 방식** | `uv add git+https://github.com/dobestan/django-easypay.git` |
 | **모델명** | `Payment`로 통일 (sajudoctor Order → Payment 변경) |
-| **필드명** | `auth_id`로 통일 (zipscan authorization_id → auth_id) |
+| **명명 규칙** | EasyPay 공식 API 명칭 기반 explicit 네이밍 (약어 금지) |
 | **적용 대상** | zipscan, realmbti, sajudoctor (irondoctor 미반영) |
 | **데이터** | 테스트 환경이라 손실 허용 |
+
+---
+
+## Naming Conventions (명명 규칙)
+
+### 원칙
+1. **Explicit over Implicit**: 약어(abbreviation) 사용 금지
+2. **EasyPay API 우선**: EasyPay 공식 API 필드명을 snake_case로 변환하여 사용
+3. **일관성**: 모든 프로젝트에서 동일한 필드명 사용
+
+### 필드 매핑 (EasyPay API → Django)
+
+| EasyPay API (camelCase) | Django 필드 (snake_case) | 설명 |
+|-------------------------|--------------------------|------|
+| `authorizationId` | `authorization_id` | 결제 인증 ID |
+| `payMethodTypeCode` | `pay_method_type_code` | 결제수단 코드 (11=카드, 21=계좌이체) |
+| `deviceTypeCode` | `device_type_code` | 디바이스 타입 (PC, MOBILE) |
+| `cancelTypeCode` | `cancel_type_code` | 취소 유형 (40=전체, 41=부분) |
+| `pgTid` | `pg_tid` | PG 거래번호 |
+| `shopOrderNo` | `order_id` | 주문번호 |
+
+### 함수명 매핑
+
+| 이전 함수명 | 현재 함수명 | 비고 |
+|-------------|-------------|------|
+| `get_device_type()` | `get_device_type_code()` | User-Agent 기반 PC/MOBILE 반환 |
+
+### Signal 데이터 키
+
+| Signal | 데이터 키 |
+|--------|----------|
+| `payment_approved` | `authorization_id`, `pay_method_type_code`, `card_name`, `card_no` |
+| `payment_cancelled` | `cancel_type_code`, `cancel_amount` |
 
 ---
 
@@ -21,7 +54,7 @@
 |---------|----------|------|
 | **EasyPayClient** | `*/easypay.py` | 3개 프로젝트 거의 동일 |
 | **EasyPayError** | `*/easypay.py` | 동일한 예외 클래스 |
-| **PG 필드들** | 각 모델 | pg_tid, auth_id, amount, paid_at 등 |
+| **PG 필드들** | 각 모델 | pg_tid, authorization_id, amount, paid_at 등 |
 | **Admin Mixin** | `*/admin.py` | 색상 배지, readonly 필드, 검색 |
 | **IP 추출** | `*/utils.py` | `get_client_ip()` CloudFlare 대응 |
 | **Device 감지** | `*/easypay.py` | User-Agent 기반 PC/MOBILE 구분 |
@@ -31,7 +64,7 @@
 | 항목 | sajudoctor | realmbti | zipscan |
 |------|------------|----------|---------|
 | 모델명 변경 | `Order` → `Payment` | 유지 | 유지 |
-| 필드 변경 | - | - | `authorization_id` → `auth_id` |
+| 필드 변경 | - | - | 기존 `authorization_id` 유지 (패키지와 동일) |
 | 연결 모델 | Product, SajuInfo | User, TestResult | Inquiry (1:1) |
 | 후처리 | Report 생성, SMS | is_paid 플래그 | CODEF API 호출 |
 
@@ -78,7 +111,7 @@ class AbstractPayment(models.Model):
     """
     # PG 트랜잭션 정보
     pg_tid = models.CharField('PG 거래번호', max_length=100, blank=True)
-    auth_id = models.CharField('인증번호', max_length=100, blank=True)
+    authorization_id = models.CharField('인증번호', max_length=100, blank=True)
 
     # 결제 금액
     amount = models.DecimalField('결제금액', max_digits=10, decimal_places=0)
@@ -92,7 +125,7 @@ class AbstractPayment(models.Model):
     )
 
     # 카드 정보 (마스킹됨)
-    pay_method = models.CharField('결제수단', max_length=20, blank=True)
+    pay_method_type_code = models.CharField('결제수단', max_length=20, blank=True)
     card_name = models.CharField('카드사', max_length=50, blank=True)
     card_no = models.CharField('카드번호', max_length=20, blank=True)
 
@@ -181,18 +214,18 @@ class EasyPayClient:
     EasyPay PG API 클라이언트 (모든 운영 필수 API 포함)
     """
 
-    def register_payment(self, payment, return_url: str, device_type: str = "PC") -> dict:
+    def register_payment(self, payment, return_url: str, device_type_code: str = "PC") -> dict:
         """결제 등록 - authPageUrl 반환"""
         # POST /api/ep9/trades/webpay
 
-    def approve_payment(self, payment, auth_id: str) -> dict:
+    def approve_payment(self, payment, authorization_id: str) -> dict:
         """결제 승인 - 콜백 후 최종 승인"""
         # POST /api/ep9/trades/approval
 
-    def cancel_payment(self, payment, cancel_type: str = "40", cancel_amount: int = None) -> dict:
+    def cancel_payment(self, payment, cancel_type_code: str = "40", cancel_amount: int = None) -> dict:
         """결제 취소/환불 (전체/부분)"""
         # POST /api/ep9/trades/cancel
-        # cancel_type: 40(전체취소), 41(부분취소)
+        # cancel_type_code: 40(전체취소), 41(부분취소)
 
     def get_transaction_status(self, payment, transaction_date: str = None) -> dict:
         """거래 상태 조회 - 영수증 정보 포함"""
@@ -214,13 +247,13 @@ class PaymentAdminMixin:
 
     # === list_display 확장 ===
     payment_list_display = [
-        'status_badge',      # 색상 배지
-        'amount_display',    # 금액 (천단위 콤마)
-        'pay_method',        # 결제수단
-        'card_name',         # 카드사
+        'status_badge',           # 색상 배지
+        'amount_display',         # 금액 (천단위 콤마)
+        'pay_method_type_code',   # 결제수단
+        'card_name',              # 카드사
         'created_at',
         'paid_at',
-        'receipt_link',      # 🆕 영수증 보기 링크
+        'receipt_link',           # 🆕 영수증 보기 링크
     ]
 
     # === Admin Actions ===
@@ -232,15 +265,15 @@ class PaymentAdminMixin:
 
     # === 상세 페이지 기능 ===
     readonly_fields = [
-        'pg_tid', 'auth_id', 'card_no', 'paid_at',
+        'pg_tid', 'authorization_id', 'card_no', 'paid_at',
         'client_ip', 'client_user_agent',
         'receipt_link_detail',   # 🆕 영수증 보기 버튼
         'pg_status_info',        # 🆕 PG 실시간 상태
     ]
 
     # === 검색/필터 ===
-    payment_search_fields = ['pg_tid', 'auth_id', 'card_no']
-    payment_list_filter = ['status', 'pay_method', 'card_name', 'paid_at']
+    payment_search_fields = ['pg_tid', 'authorization_id', 'card_no']
+    payment_list_filter = ['status', 'pay_method_type_code', 'card_name', 'paid_at']
 
     # === 통계 뷰 (changelist 상단) ===
     def changelist_view(self, request, extra_context=None):
@@ -273,7 +306,7 @@ def get_payment_statistics(self, queryset):
         'by_status': queryset.values('status').annotate(count=Count('id')),
 
         # 결제수단별 집계
-        'by_method': queryset.values('pay_method').annotate(
+        'by_method': queryset.values('pay_method_type_code').annotate(
             count=Count('id'),
             total=Sum('amount')
         ),
@@ -398,7 +431,7 @@ def export_to_csv(self, request, queryset):
     for p in queryset:
         writer.writerow([
             p.id, p.get_status_display(), p.amount,
-            p.pay_method, p.card_name, p.paid_at, p.pg_tid
+            p.pay_method_type_code, p.card_name, p.paid_at, p.pg_tid
         ])
 
     return response
@@ -571,9 +604,8 @@ python manage.py migrate
 3. 로컬 테스트
 
 #### Phase 2: zipscan 적용 (첫 번째)
-1. `authorization_id` → `auth_id` 필드 통일
-2. AbstractPayment 상속으로 전환
-3. 서버 배포 및 검증
+1. AbstractPayment 상속으로 전환 (필드명 동일: `authorization_id`)
+2. 서버 배포 및 검증
 
 #### Phase 3: realmbti 적용
 1. AbstractPayment 상속으로 전환
@@ -678,7 +710,7 @@ class OrderAdmin(PaymentAdminMixin, admin.ModelAdmin):
     - [ ] `cancel_selected_payments` - 선택 결제 일괄 취소 (🆕)
     - [ ] `refresh_transaction_status` - PG 상태 동기화 (🆕)
     - [ ] `export_to_csv` - CSV 다운로드 (🆕)
-- [ ] `easypay/utils.py` - get_client_ip, get_device_type
+- [ ] `easypay/utils.py` - get_client_ip, get_device_type_code
 
 **문서화 (docs/):**
 - [ ] `README.md` - 설치, Quick Start
@@ -698,9 +730,9 @@ class OrderAdmin(PaymentAdminMixin, admin.ModelAdmin):
 ### 5.2 Phase 2: zipscan 적용 (첫 번째)
 
 **수정 파일:**
-- [ ] `inquiries/models.py` - AbstractPayment 상속, authorization_id → auth_id
+- [ ] `inquiries/models.py` - AbstractPayment 상속 (필드명 동일: `authorization_id`)
 - [ ] `inquiries/easypay.py` → 패키지 import로 교체
-- [ ] `inquiries/views.py` - 필드명 변경 반영
+- [ ] `inquiries/views.py` - client import 경로 변경
 - [ ] `inquiries/admin.py` - PaymentAdminMixin 적용
 
 **마이그레이션:**
@@ -772,30 +804,10 @@ Abstract Model 패턴을 사용하면:
 3. `db_table` 명시로 기존 테이블명 유지
 4. 점진적 전환 가능 (프로젝트별 독립 적용)
 
-유일한 스키마 변경: zipscan의 `authorization_id` → `auth_id` 리네임 (RenameField, 데이터 손실 없음)
+**스키마 변경 없음** - EasyPay 공식 API 명칭(`authorization_id`)을 그대로 사용하여 기존 프로젝트와 호환
 
 **권장 진행 순서:**
-1. 패키지 개발 및 테스트
-2. 신규 프로젝트(irondoctor)에서 첫 적용
-3. 안정화 후 기존 프로젝트 순차 전환
-
-∴ Thinking…
-
-  The user wants me to continue working on the sandbox module for django-easypay. Based on the summary:
-
-  1. I already created the directory structure with mkdir -p
-  2. Now I need to create the sandbox module files:
-    - easypay/sandbox/__init__.py
-    - easypay/sandbox/urls.py
-    - easypay/sandbox/views.py
-    - easypay/sandbox/models.py (for a concrete test Payment model since AbstractPayment is abstract)
-    - easypay/sandbox/templates/easypay/sandbox.html
-    - easypay/sandbox/templates/easypay/callback.html
-
-  Let me start creating these files. I'll need to:
-  1. First verify the directory was created
-  2. Create the init.py
-  3. Create a concrete model for sandbox testing
-  4. Create views
-  5. Create urls
-  6. Create templates
+1. 패키지 개발 및 테스트 ✅ (277 tests passed)
+2. realmbti 적용 ✅
+3. zipscan 적용 (pending)
+4. sajudoctor 적용 (pending)

@@ -123,7 +123,7 @@ class TestCompletePaymentFlow:
         assert payment.status == PaymentStatus.COMPLETED
         assert payment.is_paid is True
         assert payment.pg_tid == "PGTID123456789012"
-        assert payment.auth_id == "AUTH_E2E_TEST"
+        assert payment.authorization_id == "AUTH_E2E_TEST"
         assert payment.card_name == "신한카드"
         assert payment.card_no == "1234-****-****-5678"
         assert payment.paid_at is not None
@@ -540,7 +540,7 @@ class TestCallbackProcessing:
         payment.refresh_from_db()
         assert payment.card_name == "현대카드"
         assert payment.card_no == "5555-****-****-6666"
-        assert payment.pay_method == "11"
+        assert payment.pay_method_type_code == "11"
 
     @override_settings(DEBUG=True)
     def test_callback_without_auth_id_marks_failed(self, client):
@@ -588,9 +588,11 @@ class TestCallbackProcessing:
             amount=Decimal("1000"),
             status=PaymentStatus.COMPLETED,
             pg_tid="ALREADY_PAID_TID",
-            auth_id="ALREADY_PAID_AUTH",
+            authorization_id="ALREADY_PAID_AUTH",
         )
-        payment.mark_as_paid(pg_tid="ALREADY_PAID_TID", auth_id="ALREADY_PAID_AUTH")
+        payment.mark_as_paid(
+            pg_tid="ALREADY_PAID_TID", authorization_id="ALREADY_PAID_AUTH"
+        )
 
         # Callback again
         callback_url = reverse("easypay_sandbox:callback")
@@ -606,7 +608,7 @@ class TestCallbackProcessing:
         # Payment should remain unchanged
         payment.refresh_from_db()
         assert payment.pg_tid == "ALREADY_PAID_TID"
-        assert payment.auth_id == "ALREADY_PAID_AUTH"
+        assert payment.authorization_id == "ALREADY_PAID_AUTH"
 
     @override_settings(DEBUG=True)
     @responses.activate

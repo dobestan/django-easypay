@@ -36,7 +36,7 @@ class TestModelStateTransitionLogging:
         )
 
         with caplog.at_level(logging.INFO):
-            payment.mark_as_paid(pg_tid="PGTID123", auth_id="AUTH123")
+            payment.mark_as_paid(pg_tid="PGTID123", authorization_id="AUTH123")
 
         # Should log payment marked as paid
         assert "marked as paid" in caplog.text.lower()
@@ -45,7 +45,7 @@ class TestModelStateTransitionLogging:
             r for r in caplog.records if "marked as paid" in r.message.lower()
         ]
         assert len(paid_records) > 0
-        # auth_id should NOT be in the log
+        # authorization_id should NOT be in the log (sensitive PG token)
         assert "AUTH123" not in caplog.text
 
     @pytest.mark.django_db

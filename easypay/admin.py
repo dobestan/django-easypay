@@ -58,7 +58,7 @@ class PaymentAdminMixin:
     payment_list_display = [
         "status_badge",
         "amount_display",
-        "pay_method",
+        "pay_method_type_code",
         "card_name",
         "created_at",
         "paid_at",
@@ -66,13 +66,13 @@ class PaymentAdminMixin:
     ]
 
     # === Search & Filter ===
-    payment_search_fields = ["pg_tid", "auth_id", "card_no"]
-    payment_list_filter = ["status", "pay_method", "card_name", "paid_at"]
+    payment_search_fields = ["pg_tid", "authorization_id", "card_no"]
+    payment_list_filter = ["status", "pay_method_type_code", "card_name", "paid_at"]
 
     # === Readonly Fields (Detail View) ===
     payment_readonly_fields = [
         "pg_tid",
-        "auth_id",
+        "authorization_id",
         "card_no",
         "paid_at",
         "client_ip",
@@ -284,7 +284,7 @@ class PaymentAdminMixin:
                     payment_cancelled.send(
                         sender=payment.__class__,
                         payment=payment,
-                        cancel_type="40",
+                        cancel_type_code="40",
                         cancel_amount=int(payment.amount),
                         cancel_data=result,
                     )
@@ -444,7 +444,7 @@ class PaymentAdminMixin:
         Export selected payments to CSV file.
 
         Includes payment fields for accounting and reporting purposes.
-        Note: Sensitive fields (auth_id) are excluded, card numbers are masked.
+        Note: Sensitive fields (authorization_id) are excluded, card numbers are masked.
         """
         # Audit log: CSV export
         logger.info(
@@ -476,7 +476,7 @@ class PaymentAdminMixin:
                 "생성일시",
                 "결제일시",
                 "PG거래번호",
-                # auth_id excluded - sensitive PG token
+                # authorization_id excluded - sensitive PG token
                 "클라이언트IP",
             ]
         )
@@ -487,7 +487,7 @@ class PaymentAdminMixin:
                     payment.pk,
                     payment.get_status_display(),
                     int(payment.amount),
-                    payment.pay_method,
+                    payment.pay_method_type_code,
                     payment.card_name,
                     mask_card_number(payment.card_no),  # PCI-DSS: mask card number
                     payment.created_at.strftime("%Y-%m-%d %H:%M:%S")
@@ -497,7 +497,7 @@ class PaymentAdminMixin:
                     if payment.paid_at
                     else "",
                     payment.pg_tid,
-                    # auth_id excluded - sensitive PG token
+                    # authorization_id excluded - sensitive PG token
                     payment.client_ip or "",
                 ]
             )
@@ -549,7 +549,7 @@ class PaymentAdminMixin:
                 queryset.values("status").annotate(count=Count("id")).order_by("-count")
             ),
             "by_method": list(
-                completed.values("pay_method")
+                completed.values("pay_method_type_code")
                 .annotate(count=Count("id"), total=Sum("amount"))
                 .order_by("-total")
             ),

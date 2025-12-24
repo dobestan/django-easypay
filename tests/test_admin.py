@@ -73,7 +73,7 @@ class TestMixinConfiguration:
         expected_fields = [
             "status_badge",
             "amount_display",
-            "pay_method",
+            "pay_method_type_code",
             "card_name",
             "created_at",
             "paid_at",
@@ -84,13 +84,13 @@ class TestMixinConfiguration:
 
     def test_payment_search_fields(self, model_admin):
         """payment_search_fields should contain searchable fields."""
-        expected_fields = ["pg_tid", "auth_id", "card_no"]
+        expected_fields = ["pg_tid", "authorization_id", "card_no"]
         for field in expected_fields:
             assert field in model_admin.payment_search_fields
 
     def test_payment_list_filter(self, model_admin):
         """payment_list_filter should contain filterable fields."""
-        expected_filters = ["status", "pay_method", "card_name", "paid_at"]
+        expected_filters = ["status", "pay_method_type_code", "card_name", "paid_at"]
         for filter_field in expected_filters:
             assert filter_field in model_admin.payment_list_filter
 
@@ -98,7 +98,7 @@ class TestMixinConfiguration:
         """payment_readonly_fields should contain non-editable fields."""
         expected_readonly = [
             "pg_tid",
-            "auth_id",
+            "authorization_id",
             "card_no",
             "paid_at",
             "client_ip",
@@ -570,7 +570,6 @@ class TestPaymentStatistics:
     def test_this_week_statistics(self, model_admin, db):
         """Statistics should correctly count this week's payments."""
         from datetime import timedelta
-
 
         from tests.models import Payment
 

@@ -15,12 +15,12 @@ Usage:
         return_url="https://example.com/callback/",
         goods_name="상품명",
         customer_name="고객명",
-        device_type="PC"
+        device_type_code="PC"
     )
     auth_page_url = result["authPageUrl"]
 
     # Approve payment (after callback)
-    result = client.approve_payment(payment=payment, auth_id="auth_id_from_callback")
+    result = client.approve_payment(payment=payment, authorization_id="id_from_callback")
 
     # Cancel payment (full or partial refund)
     result = client.cancel_payment(payment=payment, cancel_type="40")
@@ -195,8 +195,8 @@ class EasyPayClient:
         return_url: str,
         goods_name: str,
         customer_name: str = "",
-        device_type: Literal["PC", "MOBILE"] = "PC",
-        pay_method_code: str = "11",
+        device_type_code: Literal["PC", "MOBILE"] = "PC",
+        pay_method_type_code: str = "11",
     ) -> dict:
         """
         Register payment with EasyPay and get authPageUrl.
@@ -209,8 +209,8 @@ class EasyPayClient:
             return_url: URL to redirect after payment (must include payment identifier)
             goods_name: Product name (max 80 bytes)
             customer_name: Customer name for display
-            device_type: "PC" or "MOBILE"
-            pay_method_code: Payment method ("11"=card, "21"=bank, "31"=phone)
+            device_type_code: EasyPay deviceTypeCode - "PC" or "MOBILE"
+            pay_method_type_code: EasyPay payMethodTypeCode ("11"=card, "21"=bank, "31"=phone)
 
         Returns:
             dict containing:
@@ -227,10 +227,10 @@ class EasyPayClient:
             "mallId": self.mall_id,
             "shopOrderNo": order_id,
             "amount": int(payment.amount),
-            "payMethodTypeCode": pay_method_code,
+            "payMethodTypeCode": pay_method_type_code,
             "currency": "00",  # KRW
             "clientTypeCode": "00",
-            "deviceTypeCode": device_type,
+            "deviceTypeCode": device_type_code,
             "returnUrl": return_url,
             "orderInfo": {
                 "goodsName": goods_name[:80],  # Max 80 bytes
@@ -250,7 +250,7 @@ class EasyPayClient:
                     "payment_id": payment.pk,
                     "order_id": order_id,
                     "amount": int(payment.amount),
-                    "device_type": device_type,
+                    "device_type_code": device_type_code,
                     "has_auth_page_url": bool(result.get("authPageUrl")),
                 },
             )
@@ -284,7 +284,7 @@ class EasyPayClient:
     def approve_payment(
         self,
         payment: "AbstractPayment",
-        auth_id: str,
+        authorization_id: str,
     ) -> dict:
         """
         Approve payment after user completes authentication.
@@ -294,7 +294,7 @@ class EasyPayClient:
 
         Args:
             payment: Payment instance
-            auth_id: Authorization ID from callback (authorizationId parameter)
+            authorization_id: EasyPay authorizationId from callback URL parameter
 
         Returns:
             dict containing:
@@ -311,7 +311,7 @@ class EasyPayClient:
             "mallId": self.mall_id,
             "shopTransactionId": uuid.uuid4().hex[:32],  # Required unique ID
             "shopOrderNo": order_id,
-            "authorizationId": auth_id,
+            "authorizationId": authorization_id,
             "approvalReqDate": datetime.now().strftime("%Y%m%d"),
         }
 
@@ -321,7 +321,7 @@ class EasyPayClient:
             # Extract payment info for logging (avoid logging sensitive data)
             pg_tid = result.get("pgTid", "")
             payment_info = result.get("paymentInfo", {})
-            pay_method = payment_info.get("payMethodTypeCode", "")
+            pay_method_type_code = payment_info.get("payMethodTypeCode", "")
             card_info = payment_info.get("cardInfo", {})
             card_name = card_info.get("cardName", "")
 
@@ -353,9 +353,9 @@ class EasyPayClient:
                     "order_id": order_id,
                     "amount": int(payment.amount),
                     "pg_tid": pg_tid,
-                    "pay_method": pay_method,
+                    "pay_method_type_code": pay_method_type_code,
                     "card_name": card_name,
-                    # Note: card_no and auth_id are intentionally excluded (sensitive)
+                    # Note: card_no and authorization_id are intentionally excluded (sensitive)
                 },
             )
 
@@ -367,7 +367,7 @@ class EasyPayClient:
                 payment=payment,
                 approval_data={
                     "pg_tid": pg_tid,
-                    "pay_method": pay_method,
+                    "pay_method_type_code": pay_method_type_code,
                     "card_name": card_name,
                     "card_no": card_info.get("cardNo", ""),
                 },
@@ -406,7 +406,7 @@ class EasyPayClient:
     def cancel_payment(
         self,
         payment: "AbstractPayment",
-        cancel_type: Literal["40", "41"] = "40",
+        cancel_type_code: Literal["40", "41"] = "40",
         cancel_amount: int | None = None,
         cancel_reason: str = "",
     ) -> dict:
@@ -415,7 +415,7 @@ class EasyPayClient:
 
         Args:
             payment: Payment instance (must have pg_tid)
-            cancel_type: "40" for full cancel, "41" for partial cancel
+            cancel_type_code: EasyPay cancelTypeCode - "40" for full cancel, "41" for partial
             cancel_amount: Amount to cancel (required for partial cancel)
             cancel_reason: Optional reason for cancellation
 
@@ -438,11 +438,11 @@ class EasyPayClient:
             "shopOrderNo": order_id,
             "pgTid": payment.pg_tid,
             "cancelReqDate": datetime.now().strftime("%Y%m%d"),
-            "cancelTypeCode": cancel_type,
+            "cancelTypeCode": cancel_type_code,
         }
 
         # Partial cancel requires amount
-        if cancel_type == "41":
+        if cancel_type_code == "41":
             if not cancel_amount:
                 raise PaymentCancellationError(
                     message="Cancel amount required for partial cancellation",
@@ -461,7 +461,7 @@ class EasyPayClient:
                 "payment_id": payment.pk,
                 "order_id": order_id,
                 "pg_tid": payment.pg_tid,
-                "cancel_type": "full" if cancel_type == "40" else "partial",
+                "cancel_type_code": cancel_type_code,
                 "cancel_amount": effective_cancel_amount,
                 "original_amount": int(payment.amount),
                 "cancel_reason": cancel_reason[:50] if cancel_reason else "",
@@ -488,7 +488,7 @@ class EasyPayClient:
             payment_cancelled.send(
                 sender=payment.__class__,
                 payment=payment,
-                cancel_type=cancel_type,
+                cancel_type_code=cancel_type_code,
                 cancel_amount=effective_cancel_amount,
                 cancel_data=result,
             )

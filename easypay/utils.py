@@ -2,11 +2,11 @@
 Utility functions for EasyPay payment integration.
 
 Usage:
-    from easypay.utils import get_client_ip, get_device_type
+    from easypay.utils import get_client_ip, get_device_type_code
 
     # In your view
     client_ip = get_client_ip(request)
-    device_type = get_device_type(request)  # "PC" or "MOBILE"
+    device_type_code = get_device_type_code(request)  # "PC" or "MOBILE"
 """
 
 import re
@@ -52,9 +52,9 @@ def get_client_ip(request: HttpRequest) -> str:
     return request.META.get("REMOTE_ADDR", "")
 
 
-def get_device_type(request: HttpRequest) -> Literal["PC", "MOBILE"]:
+def get_device_type_code(request: HttpRequest) -> Literal["PC", "MOBILE"]:
     """
-    Determine device type from User-Agent header.
+    Determine device type code from User-Agent header.
 
     EasyPay requires deviceTypeCode to be "PC" or "MOBILE" (string, not numeric code).
 
@@ -62,7 +62,7 @@ def get_device_type(request: HttpRequest) -> Literal["PC", "MOBILE"]:
         request: Django HttpRequest object
 
     Returns:
-        "PC" or "MOBILE"
+        "PC" or "MOBILE" (EasyPay deviceTypeCode)
     """
     user_agent = request.META.get("HTTP_USER_AGENT", "").lower()
 

@@ -39,7 +39,11 @@ payment_registered = Signal()
 # Arguments:
 #   sender: Payment model class
 #   payment: Payment instance
-#   approval_data: Dict containing PG response (pg_tid, card_name, etc.)
+#   approval_data: Dict containing PG response with keys:
+#       - pg_tid: PG transaction ID (EasyPay pgTid)
+#       - pay_method_type_code: Payment method code (EasyPay payMethodTypeCode)
+#       - card_name: Card issuer name
+#       - card_no: Masked card number
 payment_approved = Signal()
 
 # Fired when payment fails at any stage.
@@ -58,7 +62,7 @@ payment_failed = Signal()
 # Arguments:
 #   sender: Payment model class
 #   payment: Payment instance
-#   cancel_type: "40" for full cancel, "41" for partial cancel
+#   cancel_type_code: "40" for full cancel, "41" for partial cancel (EasyPay cancelTypeCode)
 #   cancel_amount: Amount cancelled (for partial cancellation)
 #   cancel_data: Dict containing PG cancellation response
 payment_cancelled = Signal()

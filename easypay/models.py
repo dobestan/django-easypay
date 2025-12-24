@@ -13,6 +13,7 @@ Usage:
 """
 
 import logging
+import uuid
 
 from django.db import models
 from django.utils import timezone
@@ -39,18 +40,29 @@ class AbstractPayment(models.Model):
     (e.g., user, product, order references).
 
     Fields:
-        pg_tid: PG transaction ID from EasyPay
-        auth_id: Authorization ID from payment callback
+        hash_id: External-facing unique identifier (12-char UUID hex, for URLs)
+        pg_tid: PG transaction ID from EasyPay (pgTid)
+        authorization_id: Authorization ID from payment callback (authorizationId)
         amount: Payment amount in KRW
         status: Payment status (pending, completed, failed, cancelled, refunded)
-        pay_method: Payment method code
-        card_name: Card issuer name (masked)
+        pay_method_type_code: Payment method code (payMethodTypeCode: 11=card, 21=bank, 31=phone)
+        card_name: Card issuer name
         card_no: Card number (masked, e.g., "1234-****-****-5678")
         client_ip: Client IP address for fraud detection
         client_user_agent: User agent string
         created_at: When the payment was initiated
         paid_at: When the payment was completed
     """
+
+    # External-facing Identifier (for URLs)
+    hash_id = models.CharField(
+        "해시 ID",
+        max_length=12,
+        unique=True,
+        db_index=True,
+        editable=False,
+        help_text="External-facing unique identifier for URLs (auto-generated)",
+    )
 
     # PG Transaction Information
     pg_tid = models.CharField(
@@ -61,13 +73,13 @@ class AbstractPayment(models.Model):
         db_index=True,
         help_text="EasyPay transaction ID (pgTid)",
     )
-    auth_id = models.CharField(
+    authorization_id = models.CharField(
         "인증번호",
         max_length=100,
         blank=True,
         default="",
         db_index=True,
-        help_text="Authorization ID from payment callback",
+        help_text="EasyPay authorizationId from payment callback",
     )
 
     # Payment Amount
@@ -88,12 +100,12 @@ class AbstractPayment(models.Model):
     )
 
     # Payment Method Information
-    pay_method = models.CharField(
+    pay_method_type_code = models.CharField(
         "결제수단",
         max_length=20,
         blank=True,
         default="",
-        help_text="Payment method code (e.g., 11=card, 21=bank transfer)",
+        help_text="EasyPay payMethodTypeCode (11=card, 21=bank, 31=phone)",
     )
     card_name = models.CharField(
         "카드사",
@@ -145,6 +157,12 @@ class AbstractPayment(models.Model):
     def __str__(self):
         return f"Payment {self.pk} - {self.get_status_display()} ({self.amount:,.0f}원)"
 
+    def save(self, *args, **kwargs):
+        """Auto-generate hash_id if not set."""
+        if not self.hash_id:
+            self.hash_id = uuid.uuid4().hex[:12]
+        super().save(*args, **kwargs)
+
     @property
     def is_paid(self) -> bool:
         """Check if payment is completed."""
@@ -165,13 +183,15 @@ class AbstractPayment(models.Model):
         """Check if payment can be cancelled."""
         return self.status == PaymentStatus.COMPLETED and bool(self.pg_tid)
 
-    def mark_as_paid(self, pg_tid: str = "", auth_id: str = "", **extra_fields) -> None:
+    def mark_as_paid(
+        self, pg_tid: str = "", authorization_id: str = "", **extra_fields
+    ) -> None:
         """
         Mark payment as completed.
 
         Args:
-            pg_tid: PG transaction ID
-            auth_id: Authorization ID
+            pg_tid: PG transaction ID (EasyPay pgTid)
+            authorization_id: Authorization ID (EasyPay authorizationId)
             **extra_fields: Additional fields to update (card_name, card_no, etc.)
         """
         previous_status = self.status
@@ -180,8 +200,8 @@ class AbstractPayment(models.Model):
 
         if pg_tid:
             self.pg_tid = pg_tid
-        if auth_id:
-            self.auth_id = auth_id
+        if authorization_id:
+            self.authorization_id = authorization_id
 
         # Get valid field names for this model
         valid_field_names = {f.name for f in self._meta.get_fields() if f.concrete}
@@ -193,7 +213,12 @@ class AbstractPayment(models.Model):
                 setattr(self, field, value)
                 valid_extra_fields.append(field)
 
-        update_fields = ["status", "paid_at", "pg_tid", "auth_id"] + valid_extra_fields
+        update_fields = [
+            "status",
+            "paid_at",
+            "pg_tid",
+            "authorization_id",
+        ] + valid_extra_fields
         self.save(update_fields=update_fields)
 
         # Audit log: payment marked as paid
@@ -204,7 +229,7 @@ class AbstractPayment(models.Model):
                 "previous_status": previous_status,
                 "amount": int(self.amount),
                 "pg_tid": pg_tid,
-                # Note: auth_id is intentionally excluded (sensitive PG token)
+                # Note: authorization_id is intentionally excluded (sensitive PG token)
             },
         )
 
