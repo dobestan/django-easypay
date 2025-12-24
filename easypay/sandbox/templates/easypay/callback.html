@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% if success %}결제 완료{% else %}결제 실패{% endif %} - EasyPay Sandbox</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background-color: #f5f5f5;
+            color: #333;
+            line-height: 1.6;
+            padding: 20px;
+        }
+        .container {
+            max-width: 480px;
+            margin: 40px auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            padding: 32px;
+            text-align: center;
+        }
+        .icon {
+            font-size: 64px;
+            margin-bottom: 16px;
+        }
+        .icon.success {
+            color: #22c55e;
+        }
+        .icon.error {
+            color: #ef4444;
+        }
+        h1 {
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+        h1.success {
+            color: #16a34a;
+        }
+        h1.error {
+            color: #dc2626;
+        }
+        .subtitle {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 24px;
+        }
+        .payment-info {
+            background: #f8fafc;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 24px 0;
+            text-align: left;
+        }
+        .payment-info h3 {
+            font-size: 13px;
+            font-weight: 600;
+            color: #64748b;
+            margin-bottom: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        .info-row:last-child {
+            border-bottom: none;
+        }
+        .info-label {
+            color: #64748b;
+            font-size: 14px;
+        }
+        .info-value {
+            color: #1e293b;
+            font-weight: 500;
+            font-size: 14px;
+        }
+        .info-value.amount {
+            font-size: 18px;
+            color: #16a34a;
+        }
+        .info-value.mono {
+            font-family: "SFMono-Regular", Consolas, monospace;
+            font-size: 12px;
+        }
+        .error-box {
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+            border-radius: 8px;
+            padding: 16px;
+            margin: 20px 0;
+            text-align: left;
+        }
+        .error-box h3 {
+            color: #991b1b;
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+        .error-code {
+            background: #fee2e2;
+            color: #991b1b;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-family: "SFMono-Regular", Consolas, monospace;
+            font-size: 12px;
+            margin-bottom: 8px;
+            display: inline-block;
+        }
+        .error-message {
+            color: #7f1d1d;
+            font-size: 14px;
+        }
+        .button {
+            display: inline-block;
+            padding: 14px 32px;
+            font-size: 16px;
+            font-weight: 600;
+            color: white;
+            background: #3b82f6;
+            border: none;
+            border-radius: 8px;
+            text-decoration: none;
+            transition: background 0.2s;
+            margin-top: 20px;
+        }
+        .button:hover {
+            background: #2563eb;
+        }
+        .button.secondary {
+            background: #64748b;
+        }
+        .button.secondary:hover {
+            background: #475569;
+        }
+        .receipt-link {
+            display: inline-block;
+            margin-top: 12px;
+            color: #3b82f6;
+            font-size: 14px;
+            text-decoration: none;
+        }
+        .receipt-link:hover {
+            text-decoration: underline;
+        }
+        .message {
+            color: #64748b;
+            font-size: 14px;
+            margin-top: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        {% if success %}
+            <div class="icon success">✓</div>
+            <h1 class="success">결제 완료</h1>
+            <p class="subtitle">테스트 결제가 성공적으로 처리되었습니다.</p>
+
+            {% if payment %}
+            <div class="payment-info">
+                <h3>결제 정보</h3>
+                <div class="info-row">
+                    <span class="info-label">주문번호</span>
+                    <span class="info-value mono">{{ payment.order_id }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">상품명</span>
+                    <span class="info-value">{{ payment.goods_name }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">결제금액</span>
+                    <span class="info-value amount">{{ payment.amount|floatformat:0 }}원</span>
+                </div>
+                {% if payment.card_name %}
+                <div class="info-row">
+                    <span class="info-label">결제수단</span>
+                    <span class="info-value">{{ payment.card_name }} {{ payment.card_no }}</span>
+                </div>
+                {% endif %}
+                {% if payment.pg_tid %}
+                <div class="info-row">
+                    <span class="info-label">PG 거래번호</span>
+                    <span class="info-value mono">{{ payment.pg_tid }}</span>
+                </div>
+                {% endif %}
+                <div class="info-row">
+                    <span class="info-label">결제일시</span>
+                    <span class="info-value">{{ payment.paid_at|date:"Y-m-d H:i:s" }}</span>
+                </div>
+            </div>
+
+            {% if payment.pg_tid %}
+            <a href="{{ payment.get_receipt_url }}" target="_blank" class="receipt-link">
+                🧾 카드 영수증 보기
+            </a>
+            {% endif %}
+            {% endif %}
+
+            {% if message %}
+            <p class="message">{{ message }}</p>
+            {% endif %}
+
+        {% else %}
+            <div class="icon error">✕</div>
+            <h1 class="error">결제 실패</h1>
+            <p class="subtitle">결제 처리 중 문제가 발생했습니다.</p>
+
+            <div class="error-box">
+                <h3>오류 정보</h3>
+                {% if error_code %}
+                <span class="error-code">{{ error_code }}</span>
+                {% endif %}
+                <p class="error-message">{{ error_message }}</p>
+            </div>
+
+            {% if payment %}
+            <div class="payment-info">
+                <h3>결제 정보</h3>
+                <div class="info-row">
+                    <span class="info-label">주문번호</span>
+                    <span class="info-value mono">{{ payment.order_id }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">요청금액</span>
+                    <span class="info-value">{{ payment.amount|floatformat:0 }}원</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">상태</span>
+                    <span class="info-value">{{ payment.get_status_display }}</span>
+                </div>
+            </div>
+            {% endif %}
+        {% endif %}
+
+        <a href="{% url 'easypay_sandbox:index' %}" class="button {% if not success %}secondary{% endif %}">
+            다시 테스트하기
+        </a>
+    </div>
+</body>
+</html>

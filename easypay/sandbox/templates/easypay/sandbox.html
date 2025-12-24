@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ title }}</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background-color: #f5f5f5;
+            color: #333;
+            line-height: 1.6;
+            padding: 20px;
+        }
+        .container {
+            max-width: 480px;
+            margin: 40px auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            padding: 32px;
+        }
+        h1 {
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #1a1a1a;
+        }
+        .subtitle {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 24px;
+        }
+        .badge {
+            display: inline-block;
+            background: #fff3cd;
+            color: #856404;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+            margin-bottom: 24px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            font-size: 14px;
+            font-weight: 500;
+            margin-bottom: 6px;
+            color: #444;
+        }
+        input[type="number"],
+        input[type="text"] {
+            width: 100%;
+            padding: 12px 16px;
+            font-size: 16px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        input:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+        .hint {
+            font-size: 12px;
+            color: #888;
+            margin-top: 4px;
+        }
+        button {
+            width: 100%;
+            padding: 14px 24px;
+            font-size: 16px;
+            font-weight: 600;
+            color: white;
+            background: #3b82f6;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        button:hover {
+            background: #2563eb;
+        }
+        button:active {
+            background: #1d4ed8;
+        }
+        .info-box {
+            margin-top: 24px;
+            padding: 16px;
+            background: #f8fafc;
+            border-radius: 8px;
+            font-size: 13px;
+        }
+        .info-box h3 {
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #64748b;
+        }
+        .info-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 4px 0;
+        }
+        .info-label {
+            color: #64748b;
+        }
+        .info-value {
+            font-family: "SFMono-Regular", Consolas, monospace;
+            color: #334155;
+        }
+        .warning {
+            margin-top: 20px;
+            padding: 12px 16px;
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+            border-radius: 8px;
+            color: #991b1b;
+            font-size: 13px;
+        }
+        .warning strong {
+            display: block;
+            margin-bottom: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>{{ title }}</h1>
+        <p class="subtitle">EasyPay (KICC) 결제 테스트</p>
+
+        <span class="badge">DEBUG 모드 전용</span>
+
+        <form method="post" action="{% url 'easypay_sandbox:pay' %}">
+            {% csrf_token %}
+
+            <div class="form-group">
+                <label for="amount">결제 금액 (원)</label>
+                <input type="number"
+                       id="amount"
+                       name="amount"
+                       value="1000"
+                       min="100"
+                       max="10000000"
+                       required>
+                <p class="hint">테스트 환경에서는 실제 청구되지 않습니다.</p>
+            </div>
+
+            <div class="form-group">
+                <label for="goods_name">상품명 (선택)</label>
+                <input type="text"
+                       id="goods_name"
+                       name="goods_name"
+                       value="테스트 상품"
+                       maxlength="80"
+                       placeholder="상품명을 입력하세요">
+            </div>
+
+            <button type="submit">결제 테스트 시작</button>
+        </form>
+
+        <div class="info-box">
+            <h3>테스트 환경 정보</h3>
+            <div class="info-item">
+                <span class="info-label">Mall ID</span>
+                <span class="info-value">{{ mall_id }}</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">API URL</span>
+                <span class="info-value">{{ api_url|truncatechars:40 }}</span>
+            </div>
+        </div>
+
+        <div class="warning">
+            <strong>⚠️ 주의</strong>
+            이 페이지는 개발 테스트 전용입니다.
+            DEBUG=True 환경에서만 접근 가능합니다.
+        </div>
+    </div>
+</body>
+</html>
