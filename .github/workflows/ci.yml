@@ -9,25 +9,17 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        python-version: ["3.12", "3.13"]
-        django-version: ["5.0", "5.1", "5.2"]
-
     steps:
       - uses: actions/checkout@v4
 
       - name: Install uv
         uses: astral-sh/setup-uv@v4
 
-      - name: Set up Python ${{ matrix.python-version }}
-        run: uv python install ${{ matrix.python-version }}
+      - name: Set up Python 3.14
+        run: uv python install 3.14
 
       - name: Install dependencies
-        run: |
-          uv sync --all-extras
-          uv pip install "django~=${{ matrix.django-version }}.0"
+        run: uv sync --group dev
 
       - name: Run tests
         run: uv run python -m pytest tests/ -v
@@ -40,8 +32,8 @@ jobs:
       - name: Install uv
         uses: astral-sh/setup-uv@v4
 
-      - name: Set up Python
-        run: uv python install 3.12
+      - name: Set up Python 3.14
+        run: uv python install 3.14
 
       - name: Install dependencies
         run: uv sync --group dev
@@ -60,8 +52,8 @@ jobs:
       - name: Install uv
         uses: astral-sh/setup-uv@v4
 
-      - name: Set up Python
-        run: uv python install 3.12
+      - name: Set up Python 3.14
+        run: uv python install 3.14
 
       - name: Install dependencies
         run: uv sync --group dev
@@ -78,8 +70,8 @@ jobs:
       - name: Install uv
         uses: astral-sh/setup-uv@v4
 
-      - name: Set up Python
-        run: uv python install 3.12
+      - name: Set up Python 3.14
+        run: uv python install 3.14
 
       - name: Build package
         run: uv build
