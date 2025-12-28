@@ -82,9 +82,7 @@ class TestCSVExportSecurity:
         return user
 
     @pytest.mark.django_db
-    def test_csv_export_masks_card_number(
-        self, model_admin, request_factory, mock_user
-    ):
+    def test_csv_export_masks_card_number(self, model_admin, request_factory, mock_user):
         """CSV export should mask card numbers."""
         # Create payment with full card number (simulating bad data)
         payment = SandboxPayment.objects.create(
@@ -110,9 +108,7 @@ class TestCSVExportSecurity:
         assert "1234-5678-9012-3456" not in content
 
     @pytest.mark.django_db
-    def test_csv_export_excludes_authorization_id(
-        self, model_admin, request_factory, mock_user
-    ):
+    def test_csv_export_excludes_authorization_id(self, model_admin, request_factory, mock_user):
         """CSV export should not include authorization_id field."""
         payment = SandboxPayment.objects.create(
             order_id=f"TEST-{uuid.uuid4().hex[:8].upper()}",
@@ -389,9 +385,7 @@ class TestAdminAuditLogging:
 
     @pytest.mark.django_db
     @responses.activate
-    def test_cancel_action_logged(
-        self, model_admin, request_factory, mock_user, caplog
-    ):
+    def test_cancel_action_logged(self, model_admin, request_factory, mock_user, caplog):
         """Cancel action should be logged at WARNING level."""
         payment = SandboxPayment.objects.create(
             order_id=f"TEST-{uuid.uuid4().hex[:8].upper()}",

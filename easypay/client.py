@@ -168,9 +168,7 @@ class EasyPayClient:
             raise ConfigurationError("EASYPAY_MALL_ID is not configured")
 
         self.mall_id = (
-            mall_id
-            if mall_id is not None
-            else getattr(settings, "EASYPAY_MALL_ID", "T0021792")
+            mall_id if mall_id is not None else getattr(settings, "EASYPAY_MALL_ID", "T0021792")
         )
         self.api_url = (
             api_url

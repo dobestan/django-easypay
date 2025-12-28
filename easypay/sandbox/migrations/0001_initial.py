@@ -130,9 +130,7 @@ class Migration(migrations.Migration):
                 ),
                 (
                     "created_at",
-                    models.DateTimeField(
-                        auto_now_add=True, db_index=True, verbose_name="생성일시"
-                    ),
+                    models.DateTimeField(auto_now_add=True, db_index=True, verbose_name="생성일시"),
                 ),
                 (
                     "paid_at",

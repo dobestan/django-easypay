@@ -1,0 +1,23 @@
+#!/bin/bash
+# Pre-commit hook: runs before each commit
+# Matches CI lint job
+
+set -e
+
+echo "🔍 Running pre-commit checks..."
+
+# Check if uv is available
+if ! command -v uv &> /dev/null; then
+    echo "❌ uv not found. Please install uv first."
+    exit 1
+fi
+
+# Ruff check
+echo "  → ruff check..."
+uv run ruff check .
+
+# Ruff format check
+echo "  → ruff format --check..."
+uv run ruff format --check .
+
+echo "✅ Pre-commit checks passed!"

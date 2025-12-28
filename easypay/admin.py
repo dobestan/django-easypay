@@ -115,9 +115,7 @@ class PaymentAdminMixin:
             - CANCELLED: Gray
             - REFUNDED: Blue
         """
-        text_color, bg_color = self.STATUS_COLORS.get(
-            obj.status, ("#000000", "#FFFFFF")
-        )
+        text_color, bg_color = self.STATUS_COLORS.get(obj.status, ("#000000", "#FFFFFF"))
         return format_html(
             '<span style="'
             "background-color: {}; "
@@ -237,9 +235,7 @@ class PaymentAdminMixin:
     # =========================================================================
 
     @admin.action(description="선택한 결제 취소 (환불 처리)")
-    def cancel_selected_payments(
-        self, request: HttpRequest, queryset: QuerySet
-    ) -> None:
+    def cancel_selected_payments(self, request: HttpRequest, queryset: QuerySet) -> None:
         """
         Cancel selected payments (full refund).
 
@@ -357,9 +353,7 @@ class PaymentAdminMixin:
             )
 
     @admin.action(description="PG 거래 상태 동기화")
-    def refresh_transaction_status(
-        self, request: HttpRequest, queryset: QuerySet
-    ) -> None:
+    def refresh_transaction_status(self, request: HttpRequest, queryset: QuerySet) -> None:
         """
         Sync local status with PG server status.
 
@@ -387,10 +381,7 @@ class PaymentAdminMixin:
                 status = easypay_client.get_transaction_status(payment)
 
                 # Check if cancelled on PG side
-                if (
-                    status.get("cancelYn") == "Y"
-                    and payment.status != PaymentStatus.CANCELLED
-                ):
+                if status.get("cancelYn") == "Y" and payment.status != PaymentStatus.CANCELLED:
                     payment.status = PaymentStatus.CANCELLED
                     payment.save(update_fields=["status"])
                     logger.info(
@@ -460,9 +451,7 @@ class PaymentAdminMixin:
 
         response = HttpResponse(
             content_type="text/csv",
-            headers={
-                "Content-Disposition": f'attachment; filename="payments_{date.today()}.csv"'
-            },
+            headers={"Content-Disposition": f'attachment; filename="payments_{date.today()}.csv"'},
         )
         response.write("\ufeff")  # UTF-8 BOM for Excel compatibility
 
@@ -492,12 +481,8 @@ class PaymentAdminMixin:
                     payment.pay_method_type_code,
                     payment.card_name,
                     mask_card_number(payment.card_no),  # PCI-DSS: mask card number
-                    payment.created_at.strftime("%Y-%m-%d %H:%M:%S")
-                    if payment.created_at
-                    else "",
-                    payment.paid_at.strftime("%Y-%m-%d %H:%M:%S")
-                    if payment.paid_at
-                    else "",
+                    payment.created_at.strftime("%Y-%m-%d %H:%M:%S") if payment.created_at else "",
+                    payment.paid_at.strftime("%Y-%m-%d %H:%M:%S") if payment.paid_at else "",
                     payment.pg_tid,
                     # authorization_id excluded - sensitive PG token
                     payment.client_ip or "",

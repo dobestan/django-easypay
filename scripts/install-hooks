@@ -1,0 +1,31 @@
+#!/bin/bash
+# Install git hooks for local development
+# Run this once after cloning the repository
+
+set -e
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
+HOOKS_DIR="$PROJECT_DIR/.git/hooks"
+
+echo "Installing git hooks..."
+
+# Create hooks directory if it doesn't exist
+mkdir -p "$HOOKS_DIR"
+
+# Install pre-commit hook
+cp "$SCRIPT_DIR/pre-commit" "$HOOKS_DIR/pre-commit"
+chmod +x "$HOOKS_DIR/pre-commit"
+echo "  ✓ pre-commit hook installed"
+
+# Install pre-push hook
+cp "$SCRIPT_DIR/pre-push" "$HOOKS_DIR/pre-push"
+chmod +x "$HOOKS_DIR/pre-push"
+echo "  ✓ pre-push hook installed"
+
+echo ""
+echo "✅ Git hooks installed successfully!"
+echo ""
+echo "Hooks will run:"
+echo "  - pre-commit: ruff check, ruff format --check"
+echo "  - pre-push: mypy, pytest"

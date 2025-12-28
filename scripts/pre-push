@@ -1,0 +1,23 @@
+#!/bin/bash
+# Pre-push hook: runs before each push
+# Matches CI typecheck and test jobs
+
+set -e
+
+echo "🔍 Running pre-push checks..."
+
+# Check if uv is available
+if ! command -v uv &> /dev/null; then
+    echo "❌ uv not found. Please install uv first."
+    exit 1
+fi
+
+# Mypy type check
+echo "  → mypy easypay/..."
+uv run mypy easypay/
+
+# Run tests
+echo "  → pytest tests/..."
+uv run pytest tests/ -v --tb=short
+
+echo "✅ Pre-push checks passed!"

@@ -52,9 +52,7 @@ class SandboxIndexView(View):
         context = {
             "title": "EasyPay Sandbox",
             "mall_id": getattr(settings, "EASYPAY_MALL_ID", "T0021792"),
-            "api_url": getattr(
-                settings, "EASYPAY_API_URL", "https://testpgapi.easypay.co.kr"
-            ),
+            "api_url": getattr(settings, "EASYPAY_API_URL", "https://testpgapi.easypay.co.kr"),
         }
         return render(request, "easypay/sandbox.html", context)
 
@@ -197,9 +195,7 @@ class SandboxCallbackView(View):
         """Common callback handler for GET and POST."""
         # Get parameters from either GET or POST
         payment_id = request.GET.get("payment_id") or request.POST.get("payment_id")
-        auth_id = request.GET.get("authorizationId") or request.POST.get(
-            "authorizationId"
-        )
+        auth_id = request.GET.get("authorizationId") or request.POST.get("authorizationId")
         res_cd = request.GET.get("resCd") or request.POST.get("resCd")
         res_msg = request.GET.get("resMsg") or request.POST.get("resMsg")
 
@@ -309,9 +305,7 @@ class SandboxCallbackView(View):
                     )
 
                 client = EasyPayClient()
-                result = client.approve_payment(
-                    payment=payment, authorization_id=auth_id
-                )
+                result = client.approve_payment(payment=payment, authorization_id=auth_id)
 
                 # Extract payment info
                 pg_tid = result.get("pgTid", "")

@@ -41,9 +41,7 @@ class TestModelStateTransitionLogging:
         # Should log payment marked as paid
         assert "marked as paid" in caplog.text.lower()
         # Extra data (payment_id) is in record attributes, not in message text
-        paid_records = [
-            r for r in caplog.records if "marked as paid" in r.message.lower()
-        ]
+        paid_records = [r for r in caplog.records if "marked as paid" in r.message.lower()]
         assert len(paid_records) > 0
         # authorization_id should NOT be in the log (sensitive PG token)
         assert "AUTH123" not in caplog.text
@@ -63,9 +61,7 @@ class TestModelStateTransitionLogging:
         # Should log payment failure
         assert "marked as failed" in caplog.text.lower()
         # Extra data (payment_id) is in record attributes, not in message text
-        failed_records = [
-            r for r in caplog.records if "marked as failed" in r.message.lower()
-        ]
+        failed_records = [r for r in caplog.records if "marked as failed" in r.message.lower()]
         assert len(failed_records) > 0
 
     @pytest.mark.django_db
@@ -299,9 +295,7 @@ class TestAdminActionLogging:
         return user
 
     @pytest.mark.django_db
-    def test_csv_export_logs_admin_user(
-        self, model_admin, request_factory, mock_user, caplog
-    ):
+    def test_csv_export_logs_admin_user(self, model_admin, request_factory, mock_user, caplog):
         """CSV export should log admin username."""
         payment = SandboxPayment.objects.create(
             order_id=f"TEST-{uuid.uuid4().hex[:8].upper()}",
@@ -369,9 +363,7 @@ class TestAdminActionLogging:
 
     @pytest.mark.django_db
     @responses.activate
-    def test_refresh_status_logs_info(
-        self, model_admin, request_factory, mock_user, caplog
-    ):
+    def test_refresh_status_logs_info(self, model_admin, request_factory, mock_user, caplog):
         """Refresh status action should log at INFO level."""
         payment = SandboxPayment.objects.create(
             order_id=f"TEST-{uuid.uuid4().hex[:8].upper()}",
@@ -442,9 +434,7 @@ class TestLogExtraFields:
             payment.mark_as_failed(error_message="카드 한도 초과")
 
         # Should log with error message
-        failed_logs = [
-            r for r in caplog.records if "marked as failed" in r.message.lower()
-        ]
+        failed_logs = [r for r in caplog.records if "marked as failed" in r.message.lower()]
         assert len(failed_logs) > 0
 
     @responses.activate
@@ -483,9 +473,7 @@ class TestLogExtraFields:
             )
 
         # Order ID should appear in logs (either in message or extra)
-        registered_logs = [
-            r for r in caplog.records if "registered" in r.message.lower()
-        ]
+        registered_logs = [r for r in caplog.records if "registered" in r.message.lower()]
         assert len(registered_logs) > 0
         # Check that order_id is in extra (client uses hash_id or order_id)
         record = registered_logs[0]

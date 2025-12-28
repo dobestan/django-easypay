@@ -82,9 +82,7 @@ def request_factory():
 def mock_request(request_factory):
     """Create a mock HTTP request with common headers."""
     request = request_factory.get("/")
-    request.META["HTTP_USER_AGENT"] = (
-        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
-    )
+    request.META["HTTP_USER_AGENT"] = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
     request.META["REMOTE_ADDR"] = "192.168.1.100"
     return request
 

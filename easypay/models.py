@@ -304,8 +304,6 @@ class AbstractPayment(models.Model):
         """
         if self.pg_tid:
             if use_test_url:
-                return (
-                    f"https://testpgweb.easypay.co.kr/receipt/card?pgTid={self.pg_tid}"
-                )
+                return f"https://testpgweb.easypay.co.kr/receipt/card?pgTid={self.pg_tid}"
             return f"https://pgweb.easypay.co.kr/receipt/card?pgTid={self.pg_tid}"
         return None
