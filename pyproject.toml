@@ -104,9 +104,11 @@ django_settings_module = "tests.settings"
 [dependency-groups]
 dev = [
     "django-stubs>=5.2.8",
+    "freezegun>=1.2",
     "mypy>=1.19",
     "pytest>=9.0",
     "pytest-django>=4.11",
+    "responses>=0.23",
     "ruff>=0.14",
     "types-requests>=2.32",
 ]
