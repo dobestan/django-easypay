@@ -5,7 +5,7 @@ description = "Django payment integration for EasyPay (KICC) PG"
 readme = "README.md"
 license = { text = "MIT" }
 authors = [
-    { name = "Suhan Bae", email = "suhan@bae.sh" }
+    { name = "Suchan An", email = "dobestan@gmail.com" }
 ]
 requires-python = ">=3.12"
 keywords = ["django", "payment", "easypay", "kicc", "pg", "korea"]
@@ -15,7 +15,9 @@ classifiers = [
     "Framework :: Django",
     "Framework :: Django :: 5.0",
     "Framework :: Django :: 5.1",
+    "Framework :: Django :: 5.2",
     "Framework :: Django :: 6.0",
+    "Typing :: Typed",
     "Intended Audience :: Developers",
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
@@ -57,20 +59,44 @@ DJANGO_SETTINGS_MODULE = "tests.settings"
 python_files = ["test_*.py"]
 
 [tool.mypy]
-plugins = ["mypy_django_plugin.main"]
 python_version = "3.12"
-strict = false
-warn_return_any = false
+strict = true
+warn_return_any = true
 warn_unused_ignores = true
+warn_redundant_casts = true
+warn_unused_configs = true
+show_error_codes = true
+show_column_numbers = true
+pretty = true
+
+# Django plugin
+plugins = ["mypy_django_plugin.main"]
+
+# Package-specific settings
+[[tool.mypy.overrides]]
+module = "easypay.*"
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+disallow_untyped_decorators = false
+
+# Third-party packages without stubs
+[[tool.mypy.overrides]]
+module = [
+    "requests.*",
+]
 ignore_missing_imports = true
 
+# Admin modules can be less strict (Django admin typing is complex)
 [[tool.mypy.overrides]]
-module = "easypay.admin"
-disable_error_code = ["attr-defined", "misc"]
+module = ["easypay.admin", "easypay.sandbox.admin"]
+disable_error_code = ["attr-defined", "misc", "assignment"]
 
+# Test files can be less strict
 [[tool.mypy.overrides]]
-module = "easypay.sandbox.admin"
-disable_error_code = ["misc", "assignment"]
+module = "tests.*"
+disallow_untyped_defs = false
+disallow_incomplete_defs = false
 
 [tool.django-stubs]
 django_settings_module = "tests.settings"
@@ -78,5 +104,9 @@ django_settings_module = "tests.settings"
 [dependency-groups]
 dev = [
     "django-stubs>=5.2.8",
-    "types-requests>=2.32.4.20250913",
+    "mypy>=1.19",
+    "pytest>=9.0",
+    "pytest-django>=4.11",
+    "ruff>=0.14",
+    "types-requests>=2.32",
 ]
