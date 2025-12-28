@@ -8,6 +8,8 @@ SECRET_KEY = "django-insecure-test-key-for-easypay-tests-only"
 
 DEBUG = True
 
+ALLOWED_HOSTS = ["*", "testserver", "localhost", "127.0.0.1"]
+
 INSTALLED_APPS = [
     "django.contrib.contenttypes",
     "django.contrib.auth",

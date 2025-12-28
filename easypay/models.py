@@ -12,13 +12,16 @@ Usage:
             db_table = 'payments_payment'
 """
 
+from __future__ import annotations
+
 import logging
 import uuid
+from typing import Any
 
 from django.db import models
 from django.utils import timezone
 
-logger = logging.getLogger(__name__)
+logger: logging.Logger = logging.getLogger(__name__)
 
 
 class PaymentStatus(models.TextChoices):
@@ -154,10 +157,10 @@ class AbstractPayment(models.Model):
         abstract = True
         ordering = ["-created_at"]
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"Payment {self.pk} - {self.get_status_display()} ({self.amount:,.0f}원)"
 
-    def save(self, *args, **kwargs):
+    def save(self, *args: Any, **kwargs: Any) -> None:
         """Auto-generate hash_id if not set."""
         if not self.hash_id:
             self.hash_id = uuid.uuid4().hex[:12]
@@ -184,7 +187,7 @@ class AbstractPayment(models.Model):
         return self.status == PaymentStatus.COMPLETED and bool(self.pg_tid)
 
     def mark_as_paid(
-        self, pg_tid: str = "", authorization_id: str = "", **extra_fields
+        self, pg_tid: str = "", authorization_id: str = "", **extra_fields: Any
     ) -> None:
         """
         Mark payment as completed.
@@ -289,14 +292,20 @@ class AbstractPayment(models.Model):
             },
         )
 
-    def get_receipt_url(self) -> str | None:
+    def get_receipt_url(self, *, use_test_url: bool = False) -> str | None:
         """
         Get the card receipt URL from EasyPay.
+
+        Args:
+            use_test_url: Use test environment URL (default: False)
 
         Returns:
             Receipt URL if pg_tid exists, None otherwise.
         """
         if self.pg_tid:
-            # Production URL (test uses testpgweb.easypay.co.kr)
+            if use_test_url:
+                return (
+                    f"https://testpgweb.easypay.co.kr/receipt/card?pgTid={self.pg_tid}"
+                )
             return f"https://pgweb.easypay.co.kr/receipt/card?pgTid={self.pg_tid}"
         return None

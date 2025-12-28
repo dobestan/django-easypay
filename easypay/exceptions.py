@@ -10,6 +10,10 @@ Usage:
         logger.error(f"Registration failed: {e.code} - {e.message}")
 """
 
+from __future__ import annotations
+
+from typing import Any
+
 
 class EasyPayError(Exception):
     """
@@ -21,18 +25,22 @@ class EasyPayError(Exception):
         response: Raw API response dict (if available)
     """
 
+    message: str
+    code: str
+    response: dict[str, Any]
+
     def __init__(
         self,
         message: str = "EasyPay error occurred",
         code: str = "",
-        response: dict | None = None,
-    ):
+        response: dict[str, Any] | None = None,
+    ) -> None:
         self.message = message
         self.code = code
         self.response = response or {}
         super().__init__(self.message)
 
-    def __str__(self):
+    def __str__(self) -> str:
         if self.code:
             return f"[{self.code}] {self.message}"
         return self.message

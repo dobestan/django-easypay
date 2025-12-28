@@ -17,6 +17,8 @@ Usage:
         list_display = ['id', 'user'] + PaymentAdminMixin.payment_list_display
 """
 
+from __future__ import annotations
+
 import csv
 import logging
 from datetime import date, timedelta
@@ -31,13 +33,13 @@ from django.utils.html import format_html
 
 from .client import easypay_client
 from .exceptions import EasyPayError
-from .models import PaymentStatus
+from .models import AbstractPayment, PaymentStatus
 from .utils import mask_card_number
 
-logger = logging.getLogger(__name__)
+logger: logging.Logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
-    from .models import AbstractPayment
+    pass  # Keep for future type-only imports
 
 
 class PaymentAdminMixin:
@@ -89,7 +91,7 @@ class PaymentAdminMixin:
     ]
 
     # === Status Badge Colors ===
-    STATUS_COLORS = {
+    STATUS_COLORS: dict[str, tuple[str, str]] = {
         PaymentStatus.PENDING: ("#FFA500", "#FFF3E0"),  # Orange
         PaymentStatus.COMPLETED: ("#4CAF50", "#E8F5E9"),  # Green
         PaymentStatus.FAILED: ("#F44336", "#FFEBEE"),  # Red

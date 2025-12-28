@@ -7,7 +7,7 @@ license = { text = "MIT" }
 authors = [
     { name = "Suhan Bae", email = "suhan@bae.sh" }
 ]
-requires-python = ">=3.11"
+requires-python = ">=3.12"
 keywords = ["django", "payment", "easypay", "kicc", "pg", "korea"]
 classifiers = [
     "Development Status :: 4 - Beta",
@@ -15,13 +15,14 @@ classifiers = [
     "Framework :: Django",
     "Framework :: Django :: 5.0",
     "Framework :: Django :: 5.1",
+    "Framework :: Django :: 6.0",
     "Intended Audience :: Developers",
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
     "Topic :: Internet :: WWW/HTTP",
     "Topic :: Software Development :: Libraries :: Python Modules",
 ]
@@ -35,6 +36,8 @@ dev = [
     "pytest>=7.0",
     "pytest-django>=4.5",
     "responses>=0.23",
+    "freezegun>=1.2",
+    "django-stubs>=5.0",
 ]
 
 [project.urls]
@@ -52,3 +55,28 @@ packages = ["easypay"]
 [tool.pytest.ini_options]
 DJANGO_SETTINGS_MODULE = "tests.settings"
 python_files = ["test_*.py"]
+
+[tool.mypy]
+plugins = ["mypy_django_plugin.main"]
+python_version = "3.12"
+strict = false
+warn_return_any = false
+warn_unused_ignores = true
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "easypay.admin"
+disable_error_code = ["attr-defined", "misc"]
+
+[[tool.mypy.overrides]]
+module = "easypay.sandbox.admin"
+disable_error_code = ["misc", "assignment"]
+
+[tool.django-stubs]
+django_settings_module = "tests.settings"
+
+[dependency-groups]
+dev = [
+    "django-stubs>=5.2.8",
+    "types-requests>=2.32.4.20250913",
+]

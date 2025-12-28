@@ -29,10 +29,12 @@ Usage:
     result = client.get_transaction_status(payment=payment)
 """
 
+from __future__ import annotations
+
 import logging
 import uuid
 from datetime import datetime
-from typing import TYPE_CHECKING, Literal
+from typing import TYPE_CHECKING, Any, Literal, TypedDict
 
 import requests
 from django.conf import settings
@@ -49,7 +51,75 @@ from .exceptions import (
 if TYPE_CHECKING:
     from .models import AbstractPayment
 
-logger = logging.getLogger(__name__)
+logger: logging.Logger = logging.getLogger(__name__)
+
+
+# ============================================================
+# TypedDict definitions for API responses
+# ============================================================
+
+
+class CardInfo(TypedDict, total=False):
+    """Card information from EasyPay API."""
+
+    cardName: str
+    cardNo: str
+    installmentMonth: str
+    approvalNo: str
+
+
+class PaymentInfo(TypedDict, total=False):
+    """Payment information from EasyPay approval response."""
+
+    payMethodTypeCode: str
+    approvalAmount: int
+    cardInfo: CardInfo
+
+
+class RegisterPaymentResponse(TypedDict, total=False):
+    """Response from payment registration API."""
+
+    resCd: str
+    resMsg: str
+    authPageUrl: str
+    mallId: str
+    shopOrderNo: str
+
+
+class ApprovePaymentResponse(TypedDict, total=False):
+    """Response from payment approval API."""
+
+    resCd: str
+    resMsg: str
+    pgTid: str
+    shopOrderNo: str
+    amount: int
+    paymentInfo: PaymentInfo
+
+
+class CancelPaymentResponse(TypedDict, total=False):
+    """Response from payment cancellation API."""
+
+    resCd: str
+    resMsg: str
+    pgTid: str
+    cancelAmount: int
+    cancelDate: str
+    cancelTime: str
+
+
+class TransactionStatusResponse(TypedDict, total=False):
+    """Response from transaction status inquiry API."""
+
+    resCd: str
+    resMsg: str
+    pgTid: str
+    shopOrderNo: str
+    amount: int
+    payStatusNm: str
+    cancelYn: str
+    approvalDt: str
+    cancelDt: str
 
 
 class EasyPayClient:
@@ -113,7 +183,7 @@ class EasyPayClient:
         if not self.mall_id:
             raise ConfigurationError("EASYPAY_MALL_ID is not configured")
 
-    def _request(self, endpoint: str, payload: dict) -> dict:
+    def _request(self, endpoint: str, payload: dict[str, Any]) -> dict[str, Any]:
         """
         Send API request to EasyPay.
 
@@ -171,7 +241,7 @@ class EasyPayClient:
                     "res_cd": data.get("resCd"),
                 },
             )
-            return data
+            return dict(data)
 
         except requests.exceptions.Timeout:
             logger.error("EasyPay API timeout", extra={"endpoint": endpoint})
@@ -191,13 +261,13 @@ class EasyPayClient:
 
     def register_payment(
         self,
-        payment: "AbstractPayment",
+        payment: AbstractPayment,
         return_url: str,
         goods_name: str,
         customer_name: str = "",
         device_type_code: Literal["PC", "MOBILE"] = "PC",
         pay_method_type_code: str = "11",
-    ) -> dict:
+    ) -> dict[str, Any]:
         """
         Register payment with EasyPay and get authPageUrl.
 
@@ -283,9 +353,9 @@ class EasyPayClient:
 
     def approve_payment(
         self,
-        payment: "AbstractPayment",
+        payment: AbstractPayment,
         authorization_id: str,
-    ) -> dict:
+    ) -> dict[str, Any]:
         """
         Approve payment after user completes authentication.
 
@@ -405,11 +475,11 @@ class EasyPayClient:
 
     def cancel_payment(
         self,
-        payment: "AbstractPayment",
+        payment: AbstractPayment,
         cancel_type_code: Literal["40", "41"] = "40",
         cancel_amount: int | None = None,
         cancel_reason: str = "",
-    ) -> dict:
+    ) -> dict[str, Any]:
         """
         Cancel or refund a completed payment.
 
@@ -514,9 +584,9 @@ class EasyPayClient:
 
     def get_transaction_status(
         self,
-        payment: "AbstractPayment",
+        payment: AbstractPayment,
         transaction_date: str | None = None,
-    ) -> dict:
+    ) -> dict[str, Any]:
         """
         Query transaction status from PG.
 
@@ -610,7 +680,7 @@ class EasyPayClient:
             return self.RECEIPT_URL_TEST.format(pg_tid=pg_tid)
         return self.RECEIPT_URL_PROD.format(pg_tid=pg_tid)
 
-    def _get_order_id(self, payment: "AbstractPayment") -> str:
+    def _get_order_id(self, payment: AbstractPayment) -> str:
         """
         Extract order identifier from payment instance.
 

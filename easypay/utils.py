@@ -9,6 +9,8 @@ Usage:
     device_type_code = get_device_type_code(request)  # "PC" or "MOBILE"
 """
 
+from __future__ import annotations
+
 import re
 from typing import Literal
 
@@ -36,20 +38,21 @@ def get_client_ip(request: HttpRequest) -> str:
     # CloudFlare
     ip = request.META.get("HTTP_CF_CONNECTING_IP")
     if ip:
-        return ip.strip()
+        return str(ip).strip()
 
     # Nginx
     ip = request.META.get("HTTP_X_REAL_IP")
     if ip:
-        return ip.strip()
+        return str(ip).strip()
 
     # Proxy chain (first IP is the real client)
     x_forwarded_for = request.META.get("HTTP_X_FORWARDED_FOR")
     if x_forwarded_for:
-        return x_forwarded_for.split(",")[0].strip()
+        return str(x_forwarded_for).split(",")[0].strip()
 
     # Direct connection
-    return request.META.get("REMOTE_ADDR", "")
+    remote_addr = request.META.get("REMOTE_ADDR", "")
+    return str(remote_addr) if remote_addr else ""
 
 
 def get_device_type_code(request: HttpRequest) -> Literal["PC", "MOBILE"]:
@@ -107,7 +110,7 @@ def get_user_agent(request: HttpRequest) -> str:
     """
     user_agent = request.META.get("HTTP_USER_AGENT", "")
     # Truncate to fit in CharField(max_length=500)
-    return user_agent[:500]
+    return str(user_agent)[:500]
 
 
 def mask_card_number(card_no: str) -> str:

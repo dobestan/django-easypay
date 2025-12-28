@@ -5,8 +5,11 @@ This is a concrete implementation of AbstractPayment for sandbox testing.
 It's used by the sandbox views to create and track test payments.
 """
 
+from __future__ import annotations
+
 import uuid
 from decimal import Decimal
+from typing import Any, Self
 
 from django.db import models
 
@@ -43,10 +46,10 @@ class SandboxPayment(AbstractPayment):
         verbose_name = "Sandbox Payment"
         verbose_name_plural = "Sandbox Payments"
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"Sandbox #{self.order_id} - {self.amount:,.0f}원 ({self.get_status_display()})"
 
-    def save(self, *args, **kwargs):
+    def save(self, *args: Any, **kwargs: Any) -> None:
         """Auto-generate order_id if not provided."""
         if not self.order_id:
             self.order_id = f"SB{uuid.uuid4().hex[:12].upper()}"
@@ -57,8 +60,8 @@ class SandboxPayment(AbstractPayment):
         cls,
         amount: int = 1000,
         goods_name: str = "테스트 상품",
-        **kwargs,
-    ) -> "SandboxPayment":
+        **kwargs: Any,
+    ) -> Self:
         """
         Factory method for creating sandbox payments.
 
