@@ -8,6 +8,6 @@ class EasyPayConfig(AppConfig):
     verbose_name = "EasyPay Payment"
     default_auto_field = "django.db.models.BigAutoField"
 
-    def ready(self):
+    def ready(self) -> None:
         """Import signals when the app is ready."""
         from . import signals  # noqa: F401

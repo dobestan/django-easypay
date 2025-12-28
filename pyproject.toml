@@ -90,7 +90,12 @@ ignore_missing_imports = true
 # Admin modules can be less strict (Django admin typing is complex)
 [[tool.mypy.overrides]]
 module = ["easypay.admin", "easypay.sandbox.admin"]
-disable_error_code = ["attr-defined", "misc", "assignment"]
+disable_error_code = ["attr-defined", "misc", "assignment", "type-arg", "no-untyped-def", "no-untyped-call", "no-any-return"]
+
+# Sandbox views (decorators are complex to type)
+[[tool.mypy.overrides]]
+module = "easypay.sandbox.views"
+disable_error_code = ["no-untyped-def"]
 
 # Test files can be less strict
 [[tool.mypy.overrides]]
@@ -110,3 +115,17 @@ dev = [
     "ruff>=0.14",
     "types-requests>=2.32",
 ]
+
+# ============================================================
+# Ruff Configuration
+# ============================================================
+
+[tool.ruff]
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I"]
+ignore = ["E501"]  # Line length handled by formatter
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["F841"]  # Allow unused variables in tests (intentional calls)

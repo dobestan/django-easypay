@@ -29,7 +29,6 @@ from easypay.exceptions import (
     PaymentRegistrationError,
 )
 
-
 # ============================================================
 # Client Initialization Tests
 # ============================================================
@@ -118,9 +117,7 @@ class TestRegisterPayment:
         assert result["authPageUrl"].startswith("https://")
 
     @responses.activate
-    def test_register_with_mobile_device(
-        self, easypay_client, payment, mock_register_success
-    ):
+    def test_register_with_mobile_device(self, easypay_client, payment, mock_register_success):
         """Registration works with MOBILE device type."""
         responses.add(
             responses.POST,
@@ -165,9 +162,7 @@ class TestRegisterPayment:
         assert "A" * 81 not in request_body
 
     @responses.activate
-    def test_register_failure_raises_error(
-        self, easypay_client, payment, mock_register_failure
-    ):
+    def test_register_failure_raises_error(self, easypay_client, payment, mock_register_failure):
         """Failed registration raises PaymentRegistrationError."""
         responses.add(
             responses.POST,
@@ -187,9 +182,7 @@ class TestRegisterPayment:
         assert "필수 파라미터" in exc_info.value.message
 
     @responses.activate
-    def test_register_fires_signal(
-        self, easypay_client, payment, mock_register_success
-    ):
+    def test_register_fires_signal(self, easypay_client, payment, mock_register_success):
         """Successful registration fires payment_registered signal."""
         responses.add(
             responses.POST,
@@ -270,9 +263,7 @@ class TestApprovePayment:
         assert len(body["shopTransactionId"]) == 32
 
     @responses.activate
-    def test_approve_failure_raises_error(
-        self, easypay_client, payment, mock_approve_failure
-    ):
+    def test_approve_failure_raises_error(self, easypay_client, payment, mock_approve_failure):
         """Failed approval raises PaymentApprovalError."""
         responses.add(
             responses.POST,
@@ -287,9 +278,7 @@ class TestApprovePayment:
         assert exc_info.value.code == "E501"
 
     @responses.activate
-    def test_approve_fires_success_signal(
-        self, easypay_client, payment, mock_approve_success
-    ):
+    def test_approve_fires_success_signal(self, easypay_client, payment, mock_approve_success):
         """Successful approval fires payment_approved signal."""
         responses.add(
             responses.POST,
@@ -310,9 +299,7 @@ class TestApprovePayment:
             call_kwargs = receiver.call_args[1]
             assert call_kwargs["payment"] == payment
             assert "approval_data" in call_kwargs
-            assert (
-                call_kwargs["approval_data"]["pg_tid"] == "PGTID1234567890123456789012"
-            )
+            assert call_kwargs["approval_data"]["pg_tid"] == "PGTID1234567890123456789012"
         finally:
             payment_approved.disconnect(receiver)
 
@@ -335,9 +322,7 @@ class TestApprovePayment:
 
         try:
             with pytest.raises(PaymentApprovalError):
-                easypay_client.approve_payment(
-                    payment=payment, authorization_id="AUTH123"
-                )
+                easypay_client.approve_payment(payment=payment, authorization_id="AUTH123")
 
             assert receiver.called
             call_kwargs = receiver.call_args[1]
@@ -357,9 +342,7 @@ class TestCancelPayment:
     """Tests for payment cancellation API."""
 
     @responses.activate
-    def test_cancel_full_success(
-        self, easypay_client, completed_payment, mock_cancel_success
-    ):
+    def test_cancel_full_success(self, easypay_client, completed_payment, mock_cancel_success):
         """Full cancellation succeeds with pg_tid."""
         responses.add(
             responses.POST,
@@ -377,9 +360,7 @@ class TestCancelPayment:
         assert result["cancelAmount"] == 29900
 
     @responses.activate
-    def test_cancel_partial_success(
-        self, easypay_client, completed_payment, mock_cancel_success
-    ):
+    def test_cancel_partial_success(self, easypay_client, completed_payment, mock_cancel_success):
         """Partial cancellation succeeds with cancel_amount."""
         partial_response = mock_cancel_success.copy()
         partial_response["cancelAmount"] = 10000
@@ -413,9 +394,7 @@ class TestCancelPayment:
 
         assert exc_info.value.code == "NO_PG_TID"
 
-    def test_partial_cancel_without_amount_raises_error(
-        self, easypay_client, completed_payment
-    ):
+    def test_partial_cancel_without_amount_raises_error(self, easypay_client, completed_payment):
         """Partial cancellation without amount raises error."""
         with pytest.raises(PaymentCancellationError) as exc_info:
             easypay_client.cancel_payment(
@@ -427,9 +406,7 @@ class TestCancelPayment:
         assert exc_info.value.code == "NO_CANCEL_AMOUNT"
 
     @responses.activate
-    def test_cancel_with_reason(
-        self, easypay_client, completed_payment, mock_cancel_success
-    ):
+    def test_cancel_with_reason(self, easypay_client, completed_payment, mock_cancel_success):
         """Cancellation can include a reason."""
         import json
 
@@ -491,9 +468,7 @@ class TestCancelPayment:
         assert "이미 취소된 거래" in exc_info.value.message
 
     @responses.activate
-    def test_cancel_fires_signal(
-        self, easypay_client, completed_payment, mock_cancel_success
-    ):
+    def test_cancel_fires_signal(self, easypay_client, completed_payment, mock_cancel_success):
         """Successful cancellation fires payment_cancelled signal."""
         responses.add(
             responses.POST,
@@ -528,9 +503,7 @@ class TestGetTransactionStatus:
     """Tests for transaction status inquiry API."""
 
     @responses.activate
-    def test_status_success(
-        self, easypay_client, completed_payment, mock_status_success
-    ):
+    def test_status_success(self, easypay_client, completed_payment, mock_status_success):
         """Status inquiry returns transaction details."""
         responses.add(
             responses.POST,
@@ -714,10 +687,7 @@ class TestNetworkErrorHandling:
             )
 
         # The PaymentRegistrationError wraps EasyPayError
-        assert (
-            "timeout" in exc_info.value.message.lower()
-            or exc_info.value.code == "TIMEOUT"
-        )
+        assert "timeout" in exc_info.value.message.lower() or exc_info.value.code == "TIMEOUT"
 
     @responses.activate
     def test_connection_error_raises_error(self, easypay_client, payment):

@@ -20,7 +20,6 @@ from easypay.signals import (
     payment_registered,
 )
 
-
 # ============================================================
 # payment_registered Signal Tests
 # ============================================================
@@ -250,9 +249,7 @@ class TestPaymentFailedSignal:
 class TestPaymentCancelledSignal:
     """Tests for payment_cancelled signal."""
 
-    def test_signal_fires_with_correct_arguments(
-        self, completed_payment, signal_receiver
-    ):
+    def test_signal_fires_with_correct_arguments(self, completed_payment, signal_receiver):
         """Signal should fire with payment, cancel_type, cancel_amount, and cancel_data."""
         receiver = signal_receiver()
         payment_cancelled.connect(receiver.handler)
@@ -408,9 +405,7 @@ class TestSignalIntegration:
         finally:
             payment_failed.disconnect(receiver.handler)
 
-    def test_cancellation_signal_with_model_update(
-        self, completed_payment, signal_receiver
-    ):
+    def test_cancellation_signal_with_model_update(self, completed_payment, signal_receiver):
         """Signal emission after marking payment as cancelled."""
         receiver = signal_receiver()
         payment_cancelled.connect(receiver.handler)

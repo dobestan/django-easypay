@@ -23,7 +23,6 @@ from easypay.admin import PaymentAdminMixin
 from easypay.models import PaymentStatus
 from easypay.signals import payment_cancelled
 
-
 # ============================================================
 # Test Admin Setup
 # ============================================================
@@ -251,9 +250,7 @@ class TestPgStatusInfo:
     """Tests for pg_status_info display method."""
 
     @responses.activate
-    def test_pg_status_info_success(
-        self, model_admin, completed_payment, mock_status_success
-    ):
+    def test_pg_status_info_success(self, model_admin, completed_payment, mock_status_success):
         """PG status info should display transaction status."""
         responses.add(
             responses.POST,
@@ -267,9 +264,7 @@ class TestPgStatusInfo:
         assert "정상" in info  # cancelYn = N
 
     @responses.activate
-    def test_pg_status_info_cancelled(
-        self, model_admin, completed_payment, mock_status_cancelled
-    ):
+    def test_pg_status_info_cancelled(self, model_admin, completed_payment, mock_status_cancelled):
         """PG status info should show cancelled status."""
         responses.add(
             responses.POST,
@@ -343,9 +338,7 @@ class TestCancelSelectedPayments:
             payment_cancelled.disconnect(receiver.handler)
 
     @responses.activate
-    def test_cancel_skips_non_completed_payments(
-        self, model_admin, payment, mock_admin_request
-    ):
+    def test_cancel_skips_non_completed_payments(self, model_admin, payment, mock_admin_request):
         """Cancellation should skip non-completed payments."""
         from tests.models import Payment
 
@@ -359,9 +352,7 @@ class TestCancelSelectedPayments:
         assert payment.status == PaymentStatus.PENDING  # Unchanged
 
     @responses.activate
-    def test_cancel_skips_payments_without_pg_tid(
-        self, model_admin, mock_admin_request, db
-    ):
+    def test_cancel_skips_payments_without_pg_tid(self, model_admin, mock_admin_request, db):
         """Cancellation should skip payments without pg_tid."""
         from tests.models import Payment
 
@@ -443,9 +434,7 @@ class TestRefreshTransactionStatus:
         completed_payment.refresh_from_db()
         assert completed_payment.status == PaymentStatus.COMPLETED
 
-    def test_refresh_skips_payments_without_pg_tid(
-        self, model_admin, payment, mock_admin_request
-    ):
+    def test_refresh_skips_payments_without_pg_tid(self, model_admin, payment, mock_admin_request):
         """Refresh should skip payments without pg_tid."""
         from tests.models import Payment
 
@@ -460,9 +449,7 @@ class TestRefreshTransactionStatus:
 class TestExportToCsv:
     """Tests for export_to_csv admin action."""
 
-    def test_export_returns_csv_response(
-        self, model_admin, completed_payment, mock_admin_request
-    ):
+    def test_export_returns_csv_response(self, model_admin, completed_payment, mock_admin_request):
         """Export should return HttpResponse with CSV content type."""
         from tests.models import Payment
 
@@ -474,9 +461,7 @@ class TestExportToCsv:
         assert "attachment" in response["Content-Disposition"]
         assert ".csv" in response["Content-Disposition"]
 
-    def test_export_contains_headers(
-        self, model_admin, completed_payment, mock_admin_request
-    ):
+    def test_export_contains_headers(self, model_admin, completed_payment, mock_admin_request):
         """Exported CSV should contain column headers."""
         from tests.models import Payment
 
@@ -492,9 +477,7 @@ class TestExportToCsv:
         assert "결제일시" in content
         assert "PG거래번호" in content
 
-    def test_export_contains_payment_data(
-        self, model_admin, completed_payment, mock_admin_request
-    ):
+    def test_export_contains_payment_data(self, model_admin, completed_payment, mock_admin_request):
         """Exported CSV should contain payment data."""
         from tests.models import Payment
 
@@ -597,10 +580,7 @@ class TestPaymentStatistics:
         assert "by_status" in stats
         # Should have at least pending and completed
         status_dict = {item["status"]: item["count"] for item in stats["by_status"]}
-        assert (
-            PaymentStatus.PENDING in status_dict
-            or PaymentStatus.COMPLETED in status_dict
-        )
+        assert PaymentStatus.PENDING in status_dict or PaymentStatus.COMPLETED in status_dict
 
     def test_payment_method_breakdown(self, model_admin, completed_payment, db):
         """Statistics should break down by payment method."""

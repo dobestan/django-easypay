@@ -17,7 +17,6 @@ from freezegun import freeze_time
 
 from easypay.models import PaymentStatus
 
-
 # ============================================================
 # PaymentStatus Tests
 # ============================================================
@@ -159,12 +158,8 @@ class TestPaymentStateProperties:
         """is_cancelled returns True for both CANCELLED and REFUNDED."""
         from tests.models import Payment
 
-        cancelled = Payment.objects.create(
-            amount=Decimal("10000"), status=PaymentStatus.CANCELLED
-        )
-        refunded = Payment.objects.create(
-            amount=Decimal("10000"), status=PaymentStatus.REFUNDED
-        )
+        cancelled = Payment.objects.create(amount=Decimal("10000"), status=PaymentStatus.CANCELLED)
+        refunded = Payment.objects.create(amount=Decimal("10000"), status=PaymentStatus.REFUNDED)
 
         assert cancelled.is_cancelled is True
         assert refunded.is_cancelled is True

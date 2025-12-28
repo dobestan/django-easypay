@@ -21,7 +21,6 @@ from django.urls import reverse
 from easypay.models import PaymentStatus
 from easypay.sandbox.models import SandboxPayment
 
-
 # All tests except security tests require DEBUG=True
 # Apply @override_settings(DEBUG=True) to ensure sandbox views are accessible
 
@@ -561,9 +560,7 @@ class TestCallbackProcessing:
     def test_callback_invalid_payment_id_shows_error(self, client):
         """Invalid payment_id should show error."""
         callback_url = reverse("easypay_sandbox:callback")
-        response = client.get(
-            f"{callback_url}?payment_id=99999&authorizationId=AUTH123"
-        )
+        response = client.get(f"{callback_url}?payment_id=99999&authorizationId=AUTH123")
 
         assert response.status_code == 200
         content = response.content.decode()
@@ -590,15 +587,11 @@ class TestCallbackProcessing:
             pg_tid="ALREADY_PAID_TID",
             authorization_id="ALREADY_PAID_AUTH",
         )
-        payment.mark_as_paid(
-            pg_tid="ALREADY_PAID_TID", authorization_id="ALREADY_PAID_AUTH"
-        )
+        payment.mark_as_paid(pg_tid="ALREADY_PAID_TID", authorization_id="ALREADY_PAID_AUTH")
 
         # Callback again
         callback_url = reverse("easypay_sandbox:callback")
-        response = client.get(
-            f"{callback_url}?payment_id={payment.pk}&authorizationId=NEW_AUTH"
-        )
+        response = client.get(f"{callback_url}?payment_id={payment.pk}&authorizationId=NEW_AUTH")
 
         assert response.status_code == 200
         content = response.content.decode()
@@ -624,9 +617,7 @@ class TestCallbackProcessing:
         )
 
         callback_url = reverse("easypay_sandbox:callback")
-        response = client.get(
-            f"{callback_url}?payment_id={payment.pk}&authorizationId=BAD_AUTH"
-        )
+        response = client.get(f"{callback_url}?payment_id={payment.pk}&authorizationId=BAD_AUTH")
 
         assert response.status_code == 200
         content = response.content.decode()

@@ -20,7 +20,6 @@ from easypay.models import PaymentStatus
 from easypay.sandbox.models import SandboxPayment
 from easypay.sandbox.views import debug_required
 
-
 # ============================================================
 # SandboxPayment Model Tests
 # ============================================================
@@ -283,10 +282,7 @@ class TestSandboxPaymentView:
 
         # Should show error page, not redirect
         assert response.status_code == 200
-        assert (
-            "Server Error" in response.content.decode()
-            or "E500" in response.content.decode()
-        )
+        assert "Server Error" in response.content.decode() or "E500" in response.content.decode()
 
         # Payment should be marked as failed
         payment = SandboxPayment.objects.first()
@@ -359,10 +355,7 @@ class TestSandboxCallbackView:
         response = client.get(url, {"payment_id": str(payment.pk)})
 
         assert response.status_code == 200
-        assert (
-            "취소" in response.content.decode()
-            or "인증 정보" in response.content.decode()
-        )
+        assert "취소" in response.content.decode() or "인증 정보" in response.content.decode()
 
         payment.refresh_from_db()
         assert payment.status == PaymentStatus.FAILED
@@ -460,9 +453,7 @@ class TestSandboxCallbackView:
         )
 
         assert response.status_code == 200
-        assert (
-            "이미" in response.content.decode() or "완료" in response.content.decode()
-        )
+        assert "이미" in response.content.decode() or "완료" in response.content.decode()
 
     @override_settings(DEBUG=False)
     def test_returns_403_when_not_debug(self, client):
