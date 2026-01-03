@@ -1,6 +1,6 @@
 [project]
 name = "django-easypay"
-version = "1.2.0"
+version = "2026.1.3"
 description = "Django payment integration for EasyPay (KICC) PG"
 readme = "README.md"
 license = { text = "MIT" }
@@ -127,4 +127,10 @@ select = ["E", "F", "W", "I", "B", "C4", "UP"]
 ignore = ["E501"]  # Line length handled by formatter
 
 [tool.ruff.lint.per-file-ignores]
-"tests/*" = ["F841"]  # Allow unused variables in tests (intentional calls)
+"tests/*" = ["F841"]
+
+[tool.commitizen]
+name = "cz_conventional_commits"
+version = "2026.1.3"
+version_files = ["pyproject.toml:^version"]
+tag_format = "v$version"
