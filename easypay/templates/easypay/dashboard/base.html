@@ -140,6 +140,31 @@
         <div class="chart-wrapper">
             <canvas id="revenueTrendChart"></canvas>
         </div>
+        <details class="chart-data-table">
+            <summary>데이터 테이블 보기</summary>
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>날짜</th>
+                            <th class="number">매출</th>
+                            <th class="number">건수</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for day in stats.charts.daily_trend %}
+                        <tr>
+                            <td>{{ day.date }}</td>
+                            <td class="number">₩{{ day.revenue|floatformat:0 }}</td>
+                            <td class="number">{{ day.count }}건</td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="3" class="empty">데이터 없음</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </details>
     </div>
 
     <!-- Period Comparison Chart -->
@@ -152,6 +177,38 @@
         <div class="chart-wrapper">
             <canvas id="comparisonChart"></canvas>
         </div>
+        <details class="chart-data-table">
+            <summary>데이터 테이블 보기</summary>
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>항목</th>
+                            <th class="number">현재 기간</th>
+                            <th class="number">이전 기간</th>
+                            <th class="number">변화</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in stats.comparison %}
+                        <tr>
+                            <td>{{ item.label }}</td>
+                            <td class="number">{% if item.label == '매출' or item.label == '평균금액' %}₩{{ item.current|floatformat:0 }}{% else %}{{ item.current }}건{% endif %}</td>
+                            <td class="number">{% if item.label == '매출' or item.label == '평균금액' %}₩{{ item.previous|floatformat:0 }}{% else %}{{ item.previous }}건{% endif %}</td>
+                            <td class="number {% if item.current > item.previous %}up{% elif item.current < item.previous %}down{% endif %}">
+                                {% if item.previous > 0 %}
+                                    {% widthratio item.current item.previous 100 as change_pct %}
+                                    {% if item.current > item.previous %}↑{% elif item.current < item.previous %}↓{% endif %}
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="4" class="empty">데이터 없음</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </details>
     </div>
 
     <!-- Breakdown Charts Row -->
@@ -161,12 +218,60 @@
             <div class="chart-wrapper chart-wrapper-small">
                 <canvas id="statusChart"></canvas>
             </div>
+            <details class="chart-data-table">
+                <summary>데이터 테이블 보기</summary>
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>상태</th>
+                                <th class="number">건수</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in stats.charts.by_status %}
+                            <tr>
+                                <td><span class="status-dot" style="background-color: {{ item.color }};"></span> {{ item.label }}</td>
+                                <td class="number">{{ item.count }}건</td>
+                            </tr>
+                            {% empty %}
+                            <tr><td colspan="2" class="empty">데이터 없음</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </details>
         </div>
         <div class="chart-container chart-half">
             <h3>결제수단별 매출</h3>
             <div class="chart-wrapper chart-wrapper-small">
                 <canvas id="methodChart"></canvas>
             </div>
+            <details class="chart-data-table">
+                <summary>데이터 테이블 보기</summary>
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>결제수단</th>
+                                <th class="number">건수</th>
+                                <th class="number">매출</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in stats.charts.by_method %}
+                            <tr>
+                                <td>{{ item.label }}</td>
+                                <td class="number">{{ item.count }}건</td>
+                                <td class="number">₩{{ item.revenue|floatformat:0 }}</td>
+                            </tr>
+                            {% empty %}
+                            <tr><td colspan="3" class="empty">데이터 없음</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </details>
         </div>
     </div>
 

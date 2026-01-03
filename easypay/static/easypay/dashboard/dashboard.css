@@ -491,3 +491,120 @@
         flex: 0 0 calc(33.33% - 6px);
     }
 }
+
+/* Chart Data Tables */
+.chart-data-table {
+    margin-top: 16px;
+    border-top: 1px solid #e0e0e0;
+    padding-top: 12px;
+}
+
+.chart-data-table summary {
+    cursor: pointer;
+    font-size: 13px;
+    color: #417690;
+    font-weight: 500;
+    padding: 8px 0;
+    user-select: none;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.chart-data-table summary:hover {
+    color: #205067;
+}
+
+.chart-data-table summary::marker {
+    color: #417690;
+}
+
+.chart-data-table[open] summary {
+    margin-bottom: 12px;
+}
+
+.chart-data-table .table-wrapper {
+    max-height: 300px;
+    overflow-y: auto;
+    border: 1px solid #e0e0e0;
+    border-radius: 4px;
+}
+
+.chart-data-table table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+}
+
+.chart-data-table thead {
+    position: sticky;
+    top: 0;
+    background: #f8f9fa;
+    z-index: 1;
+}
+
+.chart-data-table th {
+    text-align: left;
+    padding: 10px 12px;
+    font-weight: 600;
+    color: #333;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.chart-data-table th.number {
+    text-align: right;
+}
+
+.chart-data-table td {
+    padding: 8px 12px;
+    border-bottom: 1px solid #f0f0f0;
+    color: #555;
+}
+
+.chart-data-table td.number {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+}
+
+.chart-data-table td.empty {
+    text-align: center;
+    color: #999;
+    padding: 20px;
+}
+
+.chart-data-table tbody tr:hover {
+    background: #f8f9fa;
+}
+
+.chart-data-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.chart-data-table .up {
+    color: #2e7d32;
+}
+
+.chart-data-table .down {
+    color: #c62828;
+}
+
+.status-dot {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    margin-right: 6px;
+    vertical-align: middle;
+}
+
+@media (max-width: 768px) {
+    .chart-data-table .table-wrapper {
+        max-height: 200px;
+    }
+
+    .chart-data-table th,
+    .chart-data-table td {
+        padding: 6px 8px;
+        font-size: 12px;
+    }
+}
