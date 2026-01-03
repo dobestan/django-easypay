@@ -260,14 +260,14 @@ def _register_test_payment_admin():
     from django.contrib import admin
 
     from easypay.admin import PaymentAdminMixin
-    from easypay.dashboard import PaymentDashboardMixin
+    from easypay.dashboard import PaymentStatisticsMixin
     from tests.models import Payment
 
     if admin.site.is_registered(Payment):
         return
 
     @admin.register(Payment)
-    class TestPaymentAdmin(PaymentDashboardMixin, PaymentAdminMixin, admin.ModelAdmin):
+    class TestPaymentAdmin(PaymentStatisticsMixin, PaymentAdminMixin, admin.ModelAdmin):
         pass
 
 

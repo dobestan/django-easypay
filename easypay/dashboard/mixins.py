@@ -1,9 +1,3 @@
-"""
-Dashboard Mixin for Django Admin.
-
-Provides a payment analytics dashboard view integrated into the admin.
-"""
-
 from __future__ import annotations
 
 import csv
@@ -17,127 +11,85 @@ from django.template.response import TemplateResponse
 from django.urls import URLPattern, path
 from django.utils import timezone
 
-from .statistics import get_dashboard_statistics, parse_date_range
-
-try:
-    from .serializers import DashboardStatsSerializer
-
-    HAS_DRF = True
-except ImportError:
-    HAS_DRF = False
-    DashboardStatsSerializer = None  # type: ignore[assignment, misc]
+from .statistics import DashboardStats, get_dashboard_statistics, parse_date_range
 
 if TYPE_CHECKING:
     from django.db.models import QuerySet
 
 
-class PaymentDashboardMixin:
-    """
-    Mixin that adds a payment analytics dashboard to Django Admin.
+class PaymentStatisticsMixin:
+    statistics_template: str = "easypay/dashboard/base.html"
+    default_date_range: str = "month"
 
-    Provides a dedicated dashboard page with:
-    - Summary cards (revenue, transactions, average, refunds)
-    - Revenue trend chart (line chart)
-    - Status breakdown chart (doughnut)
-    - Payment method breakdown chart (bar)
-
-    Usage:
-        from easypay.admin import PaymentAdminMixin
-        from easypay.dashboard import PaymentDashboardMixin
-
-        @admin.register(Payment)
-        class PaymentAdmin(PaymentDashboardMixin, PaymentAdminMixin, admin.ModelAdmin):
-            pass
-
-    Configuration:
-        dashboard_template: Template path for dashboard page
-        dashboard_default_range: Default date range ('today', '7d', '30d', '90d')
-    """
-
-    # Dashboard configuration
-    dashboard_template: str = "easypay/dashboard/base.html"
-    dashboard_default_range: str = "month"
-
-    # Valid date ranges (including custom)
     VALID_DATE_RANGES: tuple[str, ...] = ("today", "7d", "month", "30d", "90d", "custom")
 
     def get_urls(self) -> list[URLPattern]:
-        """Add dashboard URLs to model admin."""
         urls = super().get_urls()  # type: ignore[misc]
-
-        # Get model info for URL naming
         info = self._get_model_info()
 
-        dashboard_urls = [
+        statistics_urls = [
             path(
-                "dashboard/",
-                self.admin_site.admin_view(self.dashboard_view),  # type: ignore[attr-defined]
-                name=f"{info}_dashboard",
-            ),
-            path(
-                "dashboard/api/",
-                self.admin_site.admin_view(self.dashboard_api_view),  # type: ignore[attr-defined]
-                name=f"{info}_dashboard_api",
-            ),
-            path(
-                "dashboard/export/",
-                self.admin_site.admin_view(self.dashboard_export_view),  # type: ignore[attr-defined]
-                name=f"{info}_dashboard_export",
+                "statistics/",
+                self.admin_site.admin_view(self.statistics_view),  # type: ignore[attr-defined]
+                name=f"{info}_statistics",
             ),
         ]
-        return dashboard_urls + urls
+        return statistics_urls + urls
 
     def _get_model_info(self) -> str:
-        """Get model info string for URL naming."""
-        # Access model._meta from ModelAdmin
         opts = self.model._meta  # type: ignore[attr-defined]
         return f"{opts.app_label}_{opts.model_name}"
 
     def _get_date_range(self, request: HttpRequest) -> str:
-        """Extract and validate date range from request."""
-        date_range = request.GET.get("range", self.dashboard_default_range)
+        date_range = request.GET.get("range", self.default_date_range)
         if date_range not in self.VALID_DATE_RANGES:
-            date_range = self.dashboard_default_range
+            date_range = self.default_date_range
         return date_range
 
     def _get_custom_dates(self, request: HttpRequest) -> tuple[str | None, str | None]:
-        """Extract custom start/end dates from request."""
         start_date = request.GET.get("start_date")
         end_date = request.GET.get("end_date")
         return start_date, end_date
 
-    def _get_dashboard_queryset(self, request: HttpRequest) -> QuerySet:
-        """Get queryset for dashboard statistics."""
-        # Use the same queryset as changelist
+    def _get_statistics_queryset(self, request: HttpRequest) -> QuerySet:
         return self.get_queryset(request)  # type: ignore[attr-defined]
 
-    def dashboard_view(self, request: HttpRequest) -> HttpResponse:
-        """
-        Render the dashboard page.
-
-        Returns an HTML page with charts and summary cards.
-        """
+    def statistics_view(self, request: HttpRequest) -> HttpResponse:
         date_range = self._get_date_range(request)
         start_date_str, end_date_str = self._get_custom_dates(request)
-        queryset = self._get_dashboard_queryset(request)
+        queryset = self._get_statistics_queryset(request)
         stats = get_dashboard_statistics(queryset, date_range, start_date_str, end_date_str)
 
-        api_url = f"api/?range={date_range}"
-        if date_range == "custom" and start_date_str and end_date_str:
-            api_url += f"&start_date={start_date_str}&end_date={end_date_str}"
+        if request.GET.get("format") == "json":
+            return JsonResponse(stats, encoder=DjangoJSONEncoder)
 
+        if request.GET.get("export") == "csv":
+            return self._export_csv(request, date_range, start_date_str, end_date_str)
+
+        return self._statistics_html_response(
+            request, stats, date_range, start_date_str, end_date_str
+        )
+
+    def _statistics_html_response(
+        self,
+        request: HttpRequest,
+        stats: DashboardStats,
+        date_range: str,
+        start_date_str: str | None,
+        end_date_str: str | None,
+    ) -> HttpResponse:
         today = timezone.now().date()
         default_start = (today - timedelta(days=6)).isoformat()
         default_end = today.isoformat()
 
         context = {
             **self.admin_site.each_context(request),  # type: ignore[attr-defined]
-            "title": "결제 대시보드",
+            "title": "결제 통계",
             "opts": self.model._meta,  # type: ignore[attr-defined]
             "stats": stats,
             "date_range": date_range,
             "date_ranges": self.VALID_DATE_RANGES,
-            "api_url": api_url,
+            "api_url": f"?format=json&range={date_range}",
             "chart_data": json.dumps(stats, cls=DjangoJSONEncoder),
             "has_change_permission": self.has_change_permission(request),  # type: ignore[attr-defined]
             "custom_start_date": start_date_str or default_start,
@@ -145,27 +97,16 @@ class PaymentDashboardMixin:
             "today": today.isoformat(),
         }
 
-        return TemplateResponse(request, self.dashboard_template, context)
+        return TemplateResponse(request, self.statistics_template, context)
 
-    def dashboard_api_view(self, request: HttpRequest) -> HttpResponse:
-        date_range = self._get_date_range(request)
-        start_date_str, end_date_str = self._get_custom_dates(request)
-        queryset = self._get_dashboard_queryset(request)
-        stats = get_dashboard_statistics(queryset, date_range, start_date_str, end_date_str)
-
-        if HAS_DRF:
-            serializer = DashboardStatsSerializer(data=stats)
-            serializer.is_valid(raise_exception=True)
-            return JsonResponse(serializer.validated_data)
-
-        return JsonResponse(stats, encoder=DjangoJSONEncoder)
-
-    def dashboard_export_view(self, request: HttpRequest) -> HttpResponse:
-        """Export filtered payments as CSV."""
-        date_range = self._get_date_range(request)
-        start_date_str, end_date_str = self._get_custom_dates(request)
-        queryset = self._get_dashboard_queryset(request)
-
+    def _export_csv(
+        self,
+        request: HttpRequest,
+        date_range: str,
+        start_date_str: str | None,
+        end_date_str: str | None,
+    ) -> HttpResponse:
+        queryset = self._get_statistics_queryset(request)
         start_date, end_date = parse_date_range(date_range, start_date_str, end_date_str)
 
         from django.db.models import Q
@@ -214,9 +155,8 @@ class PaymentDashboardMixin:
 
         return response
 
-    def _get_dashboard_link(self) -> str:
-        """Get URL to dashboard page (for admin templates)."""
+    def _get_statistics_link(self) -> str:
         from django.urls import reverse
 
         info = self._get_model_info()
-        return reverse(f"admin:{info}_dashboard")
+        return reverse(f"admin:{info}_statistics")

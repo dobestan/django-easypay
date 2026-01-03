@@ -17,7 +17,7 @@ from django.contrib.admin.sites import AdminSite
 from django.utils import timezone
 from freezegun import freeze_time
 
-from easypay.dashboard import PaymentDashboardMixin
+from easypay.dashboard import PaymentStatisticsMixin
 from easypay.dashboard.statistics import (
     calculate_change,
     get_dashboard_statistics,
@@ -279,51 +279,45 @@ class TestDashboardMixin:
         from easypay.admin import PaymentAdminMixin
         from tests.models import Payment
 
-        class TestDashboardAdmin(PaymentDashboardMixin, PaymentAdminMixin, admin.ModelAdmin):
+        class TestDashboardAdmin(PaymentStatisticsMixin, PaymentAdminMixin, admin.ModelAdmin):
             pass
 
         site = AdminSite()
         return TestDashboardAdmin(Payment, site)
 
-    def test_get_urls_adds_dashboard_urls(self, dashboard_admin):
+    def test_get_urls_adds_statistics_url(self, dashboard_admin):
         urls = dashboard_admin.get_urls()
         url_names = [u.name for u in urls if hasattr(u, "name")]
 
-        assert "tests_payment_dashboard" in url_names
-        assert "tests_payment_dashboard_api" in url_names
+        assert "tests_payment_statistics" in url_names
 
     def test_valid_date_ranges_constant(self, dashboard_admin):
         assert dashboard_admin.VALID_DATE_RANGES == ("today", "7d", "month", "30d", "90d", "custom")
 
     def test_default_range_is_month(self, dashboard_admin):
-        assert dashboard_admin.dashboard_default_range == "month"
-
-    def test_get_urls_adds_export_url(self, dashboard_admin):
-        urls = dashboard_admin.get_urls()
-        url_names = [u.name for u in urls if hasattr(u, "name")]
-        assert "tests_payment_dashboard_export" in url_names
+        assert dashboard_admin.default_date_range == "month"
 
 
 @pytest.mark.django_db
-class TestDashboardView:
-    def test_dashboard_requires_authentication(self, client, db):
+class TestStatisticsView:
+    def test_statistics_requires_authentication(self, client, db):
         from tests.models import Payment
 
         Payment.objects.create(amount=Decimal("10000"), status=PaymentStatus.PENDING)
 
-        response = client.get("/admin/tests/payment/dashboard/")
+        response = client.get("/admin/tests/payment/statistics/")
         assert response.status_code == 302
         assert "login" in response.url
 
-    def test_dashboard_accessible_by_admin(self, admin_client, db):
+    def test_statistics_accessible_by_admin(self, admin_client, db):
         from tests.models import Payment
 
         Payment.objects.create(amount=Decimal("10000"), status=PaymentStatus.PENDING)
 
-        response = admin_client.get("/admin/tests/payment/dashboard/")
+        response = admin_client.get("/admin/tests/payment/statistics/")
         assert response.status_code == 200
 
-    def test_dashboard_contains_chart_data(self, admin_client, db):
+    def test_statistics_contains_chart_data(self, admin_client, db):
         from tests.models import Payment
 
         Payment.objects.create(
@@ -332,32 +326,32 @@ class TestDashboardView:
             paid_at=timezone.now(),
         )
 
-        response = admin_client.get("/admin/tests/payment/dashboard/")
+        response = admin_client.get("/admin/tests/payment/statistics/")
         content = response.content.decode("utf-8")
 
         assert "revenueTrendChart" in content
         assert "statusChart" in content
         assert "methodChart" in content
 
-    def test_dashboard_respects_date_range_param(self, admin_client, db):
-        response = admin_client.get("/admin/tests/payment/dashboard/?range=30d")
+    def test_statistics_respects_date_range_param(self, admin_client, db):
+        response = admin_client.get("/admin/tests/payment/statistics/?range=30d")
         assert response.status_code == 200
         assert response.context["date_range"] == "30d"
 
 
 @pytest.mark.django_db
-class TestDashboardAPI:
+class TestStatisticsAPI:
     def test_api_requires_authentication(self, client, db):
-        response = client.get("/admin/tests/payment/dashboard/api/?range=7d")
+        response = client.get("/admin/tests/payment/statistics/?format=json&range=7d")
         assert response.status_code == 302
 
     def test_api_returns_json(self, admin_client, db):
-        response = admin_client.get("/admin/tests/payment/dashboard/api/?range=7d")
+        response = admin_client.get("/admin/tests/payment/statistics/?format=json&range=7d")
         assert response.status_code == 200
         assert response["Content-Type"] == "application/json"
 
     def test_api_contains_expected_structure(self, admin_client, db):
-        response = admin_client.get("/admin/tests/payment/dashboard/api/?range=7d")
+        response = admin_client.get("/admin/tests/payment/statistics/?format=json&range=7d")
         data = response.json()
 
         assert "summary" in data
@@ -379,7 +373,7 @@ class TestDashboardAPI:
             paid_at=timezone.now(),
         )
 
-        response = admin_client.get("/admin/tests/payment/dashboard/api/?range=today")
+        response = admin_client.get("/admin/tests/payment/statistics/?format=json&range=today")
         data = response.json()
 
         assert data["meta"]["date_range"] == "today"
@@ -513,7 +507,7 @@ class TestDRFAPIView:
 @pytest.mark.django_db
 class TestCSVExport:
     def test_export_requires_authentication(self, client, db):
-        response = client.get("/admin/tests/payment/dashboard/export/?range=7d")
+        response = client.get("/admin/tests/payment/statistics/?export=csv&range=7d")
         assert response.status_code == 302
 
     @freeze_time("2026-01-15 12:00:00")
@@ -526,14 +520,14 @@ class TestCSVExport:
             paid_at=timezone.now(),
         )
 
-        response = admin_client.get("/admin/tests/payment/dashboard/export/?range=7d")
+        response = admin_client.get("/admin/tests/payment/statistics/?export=csv&range=7d")
         assert response.status_code == 200
         assert response["Content-Type"] == "text/csv; charset=utf-8-sig"
         assert "attachment" in response["Content-Disposition"]
 
     @freeze_time("2026-01-15 12:00:00")
     def test_export_contains_headers(self, admin_client, db):
-        response = admin_client.get("/admin/tests/payment/dashboard/export/?range=7d")
+        response = admin_client.get("/admin/tests/payment/statistics/?export=csv&range=7d")
         content = response.content.decode("utf-8-sig")
         assert "ID" in content
         assert "주문번호" in content
@@ -555,7 +549,7 @@ class TestCSVExport:
             paid_at=timezone.now() - timedelta(days=30),
         )
 
-        response = admin_client.get("/admin/tests/payment/dashboard/export/?range=7d")
+        response = admin_client.get("/admin/tests/payment/statistics/?export=csv&range=7d")
         content = response.content.decode("utf-8-sig")
         assert "10000" in content
         assert "50000" not in content
@@ -571,7 +565,7 @@ class TestCSVExport:
         )
 
         response = admin_client.get(
-            "/admin/tests/payment/dashboard/export/?range=custom&start_date=2026-01-05&end_date=2026-01-15"
+            "/admin/tests/payment/statistics/?export=csv&range=custom&start_date=2026-01-05&end_date=2026-01-15"
         )
         assert response.status_code == 200
         content = response.content.decode("utf-8-sig")

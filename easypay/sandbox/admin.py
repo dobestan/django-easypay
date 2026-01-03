@@ -8,13 +8,13 @@ Only useful when DEBUG=True.
 from django.contrib import admin
 
 from easypay.admin import PaymentAdminMixin
-from easypay.dashboard import PaymentDashboardMixin
+from easypay.dashboard import PaymentStatisticsMixin
 
 from .models import SandboxPayment
 
 
 @admin.register(SandboxPayment)
-class SandboxPaymentAdmin(PaymentDashboardMixin, PaymentAdminMixin, admin.ModelAdmin):
+class SandboxPaymentAdmin(PaymentStatisticsMixin, PaymentAdminMixin, admin.ModelAdmin):
     """
     Admin for SandboxPayment model.
 

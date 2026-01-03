@@ -5,8 +5,44 @@
 
 {% block extrahead %}
 {{ block.super }}
+<script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-<link rel="stylesheet" href="{% static 'easypay/dashboard/dashboard.css' %}">
+<style>
+    .chart-container { position: relative; height: 300px; }
+    .chart-container-small { height: 250px; }
+    
+    /* Date Range Selector Active State */
+    .date-range-selector button.active {
+        background-color: #4f46e5 !important;
+        color: white !important;
+        border-color: #4f46e5 !important;
+    }
+
+    /* Calendar Styles */
+    .calendar-day {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 2.5rem;
+        cursor: pointer;
+        border-radius: 9999px;
+        font-size: 0.875rem;
+        color: #374151;
+    }
+    .calendar-day:hover:not(.empty):not(.future) {
+        background-color: #f3f4f6;
+    }
+    .calendar-day.weekend { color: #ef4444; }
+    .calendar-day.sunday { color: #ef4444; }
+    .calendar-day.saturday { color: #2563eb; }
+    .calendar-day.empty { cursor: default; }
+    .calendar-day.future { color: #d1d5db; cursor: not-allowed; }
+    .calendar-day.selected { background-color: #e0e7ff; color: #4338ca; }
+    .calendar-day.range-start, .calendar-day.range-end {
+        background-color: #4f46e5;
+        color: white;
+    }
+</style>
 {% endblock %}
 
 {% block breadcrumbs %}
@@ -19,147 +55,140 @@
 {% endblock %}
 
 {% block content %}
-<div id="easypay-dashboard" class="easypay-dashboard">
+<div id="easypay-dashboard" class="max-w-7xl mx-auto px-4 py-6">
     <!-- Header with Date Range Selector -->
-    <div class="dashboard-header">
-        <h1>{{ title }}</h1>
-        <div class="date-range-selector">
-            <button type="button" data-range="month" {% if date_range == 'month' %}class="active"{% endif %}>
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+        <h1 class="text-2xl font-bold text-gray-900">{{ title }}</h1>
+        <div class="date-range-selector flex flex-wrap gap-2">
+            <button type="button" data-range="month" class="px-4 py-2 text-sm font-medium rounded-md border {% if date_range == 'month' %}active{% else %}bg-white text-gray-700 border-gray-300 hover:bg-gray-50{% endif %}">
                 이번달
             </button>
-            <button type="button" data-range="today" {% if date_range == 'today' %}class="active"{% endif %}>
+            <button type="button" data-range="today" class="px-4 py-2 text-sm font-medium rounded-md border {% if date_range == 'today' %}active{% else %}bg-white text-gray-700 border-gray-300 hover:bg-gray-50{% endif %}">
                 오늘
             </button>
-            <button type="button" data-range="7d" {% if date_range == '7d' %}class="active"{% endif %}>
+            <button type="button" data-range="7d" class="px-4 py-2 text-sm font-medium rounded-md border {% if date_range == '7d' %}active{% else %}bg-white text-gray-700 border-gray-300 hover:bg-gray-50{% endif %}">
                 7일
             </button>
-            <button type="button" data-range="30d" {% if date_range == '30d' %}class="active"{% endif %}>
+            <button type="button" data-range="30d" class="px-4 py-2 text-sm font-medium rounded-md border {% if date_range == '30d' %}active{% else %}bg-white text-gray-700 border-gray-300 hover:bg-gray-50{% endif %}">
                 30일
             </button>
-            <button type="button" data-range="90d" {% if date_range == '90d' %}class="active"{% endif %}>
+            <button type="button" data-range="90d" class="px-4 py-2 text-sm font-medium rounded-md border {% if date_range == '90d' %}active{% else %}bg-white text-gray-700 border-gray-300 hover:bg-gray-50{% endif %}">
                 90일
             </button>
-            <button type="button" data-range="custom" id="customRangeBtn" {% if date_range == 'custom' %}class="active"{% endif %}>
+            <button type="button" data-range="custom" id="customRangeBtn" class="px-4 py-2 text-sm font-medium rounded-md border {% if date_range == 'custom' %}active{% else %}bg-white text-gray-700 border-gray-300 hover:bg-gray-50{% endif %}">
                 직접선택
             </button>
         </div>
     </div>
 
     <!-- Custom Date Range Picker -->
-    <div id="customDatePicker" class="custom-date-picker" {% if date_range != 'custom' %}style="display: none;"{% endif %}>
-        <div class="date-picker-row">
-            <div class="date-input-group">
-                <label for="startDate">시작일</label>
-                <input type="date" id="startDate" value="{{ custom_start_date }}" max="{{ today }}">
+    <div id="customDatePicker" class="bg-gray-50 rounded-lg p-4 mb-6" {% if date_range != 'custom' %}style="display: none;"{% endif %}>
+        <div class="flex flex-wrap items-end gap-4 mb-6">
+            <div class="flex flex-col">
+                <label for="startDate" class="text-xs font-medium text-gray-500 mb-1">시작일</label>
+                <input type="date" id="startDate" value="{{ custom_start_date }}" max="{{ today }}" class="px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-indigo-500 focus:border-indigo-500">
             </div>
-            <span class="date-separator">~</span>
-            <div class="date-input-group">
-                <label for="endDate">종료일</label>
-                <input type="date" id="endDate" value="{{ custom_end_date }}" max="{{ today }}">
+            <span class="text-gray-400 pb-2">~</span>
+            <div class="flex flex-col">
+                <label for="endDate" class="text-xs font-medium text-gray-500 mb-1">종료일</label>
+                <input type="date" id="endDate" value="{{ custom_end_date }}" max="{{ today }}" class="px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-indigo-500 focus:border-indigo-500">
             </div>
-            <button type="button" id="applyDateRange" class="apply-btn">적용</button>
-            <button type="button" id="exportCsv" class="export-btn">CSV 다운로드</button>
+            <button type="button" id="applyDateRange" class="px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-md hover:bg-indigo-700">적용</button>
+            <button type="button" id="exportCsv" class="px-4 py-2 bg-emerald-600 text-white text-sm font-medium rounded-md hover:bg-emerald-700">CSV 다운로드</button>
         </div>
-        <div class="calendar-container">
-            <div class="calendar-nav">
-                <button type="button" id="prevMonth">&lt;</button>
-                <span id="calendarMonth"></span>
-                <button type="button" id="nextMonth">&gt;</button>
+        
+        <div class="calendar-container max-w-md">
+            <div class="flex items-center justify-center gap-4 mb-4">
+                <button type="button" id="prevMonth" class="p-2 text-gray-400 hover:text-gray-600">
+                    &lt;
+                </button>
+                <span id="calendarMonth" class="text-lg font-semibold text-gray-900 min-w-[100px] text-center"></span>
+                <button type="button" id="nextMonth" class="p-2 text-gray-400 hover:text-gray-600">
+                    &gt;
+                </button>
             </div>
-            <div class="calendar-grid" id="calendarGrid">
-                <div class="calendar-header">
-                    <span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span class="weekend">토</span><span class="weekend sunday">일</span>
+            <div class="ring-1 ring-gray-200 rounded-lg overflow-hidden bg-white" id="calendarGrid">
+                <div class="grid grid-cols-7 text-center text-xs font-semibold text-gray-700 bg-gray-50 border-b border-gray-200">
+                    <span class="py-2">월</span><span class="py-2">화</span><span class="py-2">수</span><span class="py-2">목</span><span class="py-2">금</span><span class="py-2 text-blue-600">토</span><span class="py-2 text-rose-600">일</span>
                 </div>
-                <div class="calendar-days" id="calendarDays"></div>
+                <div class="grid grid-cols-7 text-sm" id="calendarDays"></div>
             </div>
         </div>
     </div>
 
     <!-- Summary Cards -->
-    <div class="summary-cards">
-        <div class="summary-card">
-            <div class="card-icon card-icon-revenue">💰</div>
-            <div class="card-content">
-                <span class="card-label">총 매출</span>
-                <span class="card-value" id="totalRevenue">{{ stats.summary.total_revenue.formatted }}</span>
-                {% if stats.summary.total_revenue.change is not None %}
-                <span class="card-change {{ stats.summary.total_revenue.trend }}">
-                    {% if stats.summary.total_revenue.trend == 'up' %}↑{% elif stats.summary.total_revenue.trend == 'down' %}↓{% endif %}
-                    {{ stats.summary.total_revenue.change }}%
-                </span>
-                {% endif %}
-            </div>
+    <dl class="grid grid-cols-1 gap-px bg-gray-900/5 sm:grid-cols-2 lg:grid-cols-4 rounded-lg overflow-hidden mb-6">
+        <div class="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-2 bg-white px-4 py-8 sm:px-6">
+            <dt class="text-sm font-medium text-gray-500">💰 총 매출</dt>
+            {% if stats.summary.total_revenue.change is not None %}
+            <dd class="text-xs font-medium {% if stats.summary.total_revenue.trend == 'up' %}text-emerald-600{% elif stats.summary.total_revenue.trend == 'down' %}text-rose-600{% else %}text-gray-500{% endif %}">
+                {% if stats.summary.total_revenue.trend == 'up' %}↑{% elif stats.summary.total_revenue.trend == 'down' %}↓{% endif %}
+                {{ stats.summary.total_revenue.change }}%
+            </dd>
+            {% endif %}
+            <dd class="w-full flex-none text-3xl font-semibold tracking-tight text-gray-900" id="totalRevenue">{{ stats.summary.total_revenue.formatted }}</dd>
         </div>
 
-        <div class="summary-card">
-            <div class="card-icon card-icon-count">📦</div>
-            <div class="card-content">
-                <span class="card-label">결제 건수</span>
-                <span class="card-value" id="transactionCount">{{ stats.summary.transaction_count.formatted }}</span>
-                {% if stats.summary.transaction_count.change is not None %}
-                <span class="card-change {{ stats.summary.transaction_count.trend }}">
-                    {% if stats.summary.transaction_count.trend == 'up' %}↑{% elif stats.summary.transaction_count.trend == 'down' %}↓{% endif %}
-                    {{ stats.summary.transaction_count.change }}%
-                </span>
-                {% endif %}
-            </div>
+        <div class="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-2 bg-white px-4 py-8 sm:px-6">
+            <dt class="text-sm font-medium text-gray-500">📦 결제 건수</dt>
+            {% if stats.summary.transaction_count.change is not None %}
+            <dd class="text-xs font-medium {% if stats.summary.transaction_count.trend == 'up' %}text-emerald-600{% elif stats.summary.transaction_count.trend == 'down' %}text-rose-600{% else %}text-gray-500{% endif %}">
+                {% if stats.summary.transaction_count.trend == 'up' %}↑{% elif stats.summary.transaction_count.trend == 'down' %}↓{% endif %}
+                {{ stats.summary.transaction_count.change }}%
+            </dd>
+            {% endif %}
+            <dd class="w-full flex-none text-3xl font-semibold tracking-tight text-gray-900" id="transactionCount">{{ stats.summary.transaction_count.formatted }}</dd>
         </div>
 
-        <div class="summary-card">
-            <div class="card-icon card-icon-average">📊</div>
-            <div class="card-content">
-                <span class="card-label">평균 결제금액</span>
-                <span class="card-value" id="averageValue">{{ stats.summary.average_value.formatted }}</span>
-                {% if stats.summary.average_value.change is not None %}
-                <span class="card-change {{ stats.summary.average_value.trend }}">
-                    {% if stats.summary.average_value.trend == 'up' %}↑{% elif stats.summary.average_value.trend == 'down' %}↓{% endif %}
-                    {{ stats.summary.average_value.change }}%
-                </span>
-                {% endif %}
-            </div>
+        <div class="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-2 bg-white px-4 py-8 sm:px-6">
+            <dt class="text-sm font-medium text-gray-500">📊 평균 결제금액</dt>
+            {% if stats.summary.average_value.change is not None %}
+            <dd class="text-xs font-medium {% if stats.summary.average_value.trend == 'up' %}text-emerald-600{% elif stats.summary.average_value.trend == 'down' %}text-rose-600{% else %}text-gray-500{% endif %}">
+                {% if stats.summary.average_value.trend == 'up' %}↑{% elif stats.summary.average_value.trend == 'down' %}↓{% endif %}
+                {{ stats.summary.average_value.change }}%
+            </dd>
+            {% endif %}
+            <dd class="w-full flex-none text-3xl font-semibold tracking-tight text-gray-900" id="averageValue">{{ stats.summary.average_value.formatted }}</dd>
         </div>
 
-        <div class="summary-card">
-            <div class="card-icon card-icon-refund">🔄</div>
-            <div class="card-content">
-                <span class="card-label">환불/취소</span>
-                <span class="card-value" id="refundCount">{{ stats.summary.refund_count.formatted }}</span>
-                {% if stats.summary.refund_count.change is not None %}
-                <span class="card-change {{ stats.summary.refund_count.trend }}">
-                    {% if stats.summary.refund_count.trend == 'up' %}↑{% elif stats.summary.refund_count.trend == 'down' %}↓{% endif %}
-                    {{ stats.summary.refund_count.change }}%
-                </span>
-                {% endif %}
-            </div>
+        <div class="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-2 bg-white px-4 py-8 sm:px-6">
+            <dt class="text-sm font-medium text-gray-500">🔄 환불/취소</dt>
+            {% if stats.summary.refund_count.change is not None %}
+            <dd class="text-xs font-medium {% if stats.summary.refund_count.trend == 'up' %}text-emerald-600{% elif stats.summary.refund_count.trend == 'down' %}text-rose-600{% else %}text-gray-500{% endif %}">
+                {% if stats.summary.refund_count.trend == 'up' %}↑{% elif stats.summary.refund_count.trend == 'down' %}↓{% endif %}
+                {{ stats.summary.refund_count.change }}%
+            </dd>
+            {% endif %}
+            <dd class="w-full flex-none text-3xl font-semibold tracking-tight text-gray-900" id="refundCount">{{ stats.summary.refund_count.formatted }}</dd>
         </div>
-    </div>
+    </dl>
 
     <!-- Main Revenue Trend Chart -->
-    <div class="chart-container chart-main">
-        <h3>일별 매출 추이</h3>
-        <div class="chart-wrapper">
+    <div class="bg-white rounded-lg border border-gray-200 p-6 mb-6">
+        <h3 class="text-base font-semibold text-gray-900 mb-4">일별 매출 추이</h3>
+        <div class="chart-container">
             <canvas id="revenueTrendChart"></canvas>
         </div>
-        <details class="chart-data-table">
-            <summary>데이터 테이블 보기</summary>
-            <div class="table-wrapper">
-                <table>
+        <details class="mt-4 pt-4 border-t border-gray-100">
+            <summary class="text-sm text-gray-500 cursor-pointer hover:text-gray-700">데이터 테이블 보기</summary>
+            <div class="mt-3 overflow-x-auto">
+                <table class="min-w-full text-sm">
                     <thead>
-                        <tr>
-                            <th>날짜</th>
-                            <th class="number">매출</th>
-                            <th class="number">건수</th>
+                        <tr class="border-b border-gray-200">
+                            <th class="text-left py-2 px-3 font-medium text-gray-900">날짜</th>
+                            <th class="text-right py-2 px-3 font-medium text-gray-900">매출</th>
+                            <th class="text-right py-2 px-3 font-medium text-gray-900">건수</th>
                         </tr>
                     </thead>
-                    <tbody>
+                    <tbody class="divide-y divide-gray-100">
                         {% for day in stats.charts.daily_trend %}
                         <tr>
-                            <td>{{ day.date }}</td>
-                            <td class="number">₩{{ day.revenue|floatformat:0 }}</td>
-                            <td class="number">{{ day.count }}건</td>
+                            <td class="py-2 px-3 text-gray-600">{{ day.date }}</td>
+                            <td class="py-2 px-3 text-right text-gray-900">₩{{ day.revenue|floatformat:0 }}</td>
+                            <td class="py-2 px-3 text-right text-gray-900">{{ day.count }}건</td>
                         </tr>
                         {% empty %}
-                        <tr><td colspan="3" class="empty">데이터 없음</td></tr>
+                        <tr><td colspan="3" class="py-4 text-center text-gray-400">데이터 없음</td></tr>
                         {% endfor %}
                     </tbody>
                 </table>
@@ -168,34 +197,34 @@
     </div>
 
     <!-- Period Comparison Chart -->
-    <div class="chart-container chart-main">
-        <h3>기간 비교 (현재 vs 이전)</h3>
-        <p class="comparison-period-info">
+    <div class="bg-white rounded-lg border border-gray-200 p-6 mb-6">
+        <h3 class="text-base font-semibold text-gray-900 mb-4">기간 비교 (현재 vs 이전)</h3>
+        <p class="comparison-period-info text-sm text-gray-500 mb-4">
             현재: {{ stats.meta.start_date }} ~ {{ stats.meta.end_date }} |
             이전: {{ stats.meta.prev_start_date }} ~ {{ stats.meta.prev_end_date }}
         </p>
-        <div class="chart-wrapper">
+        <div class="chart-container">
             <canvas id="comparisonChart"></canvas>
         </div>
-        <details class="chart-data-table">
-            <summary>데이터 테이블 보기</summary>
-            <div class="table-wrapper">
-                <table>
+        <details class="mt-4 pt-4 border-t border-gray-100">
+            <summary class="text-sm text-gray-500 cursor-pointer hover:text-gray-700">데이터 테이블 보기</summary>
+            <div class="mt-3 overflow-x-auto">
+                <table class="min-w-full text-sm">
                     <thead>
-                        <tr>
-                            <th>항목</th>
-                            <th class="number">현재 기간</th>
-                            <th class="number">이전 기간</th>
-                            <th class="number">변화</th>
+                        <tr class="border-b border-gray-200">
+                            <th class="text-left py-2 px-3 font-medium text-gray-900">항목</th>
+                            <th class="text-right py-2 px-3 font-medium text-gray-900">현재 기간</th>
+                            <th class="text-right py-2 px-3 font-medium text-gray-900">이전 기간</th>
+                            <th class="text-right py-2 px-3 font-medium text-gray-900">변화</th>
                         </tr>
                     </thead>
-                    <tbody>
+                    <tbody class="divide-y divide-gray-100">
                         {% for item in stats.comparison %}
                         <tr>
-                            <td>{{ item.label }}</td>
-                            <td class="number">{% if item.label == '매출' or item.label == '평균금액' %}₩{{ item.current|floatformat:0 }}{% else %}{{ item.current }}건{% endif %}</td>
-                            <td class="number">{% if item.label == '매출' or item.label == '평균금액' %}₩{{ item.previous|floatformat:0 }}{% else %}{{ item.previous }}건{% endif %}</td>
-                            <td class="number {% if item.current > item.previous %}up{% elif item.current < item.previous %}down{% endif %}">
+                            <td class="py-2 px-3 text-gray-600">{{ item.label }}</td>
+                            <td class="py-2 px-3 text-right text-gray-900">{% if item.label == '매출' or item.label == '평균금액' %}₩{{ item.current|floatformat:0 }}{% else %}{{ item.current }}건{% endif %}</td>
+                            <td class="py-2 px-3 text-right text-gray-900">{% if item.label == '매출' or item.label == '평균금액' %}₩{{ item.previous|floatformat:0 }}{% else %}{{ item.previous }}건{% endif %}</td>
+                            <td class="py-2 px-3 text-right font-medium {% if item.current > item.previous %}text-emerald-600{% elif item.current < item.previous %}text-rose-600{% endif %}">
                                 {% if item.previous > 0 %}
                                     {% widthratio item.current item.previous 100 as change_pct %}
                                     {% if item.current > item.previous %}↑{% elif item.current < item.previous %}↓{% endif %}
@@ -203,7 +232,7 @@
                             </td>
                         </tr>
                         {% empty %}
-                        <tr><td colspan="4" class="empty">데이터 없음</td></tr>
+                        <tr><td colspan="4" class="py-4 text-center text-gray-400">데이터 없음</td></tr>
                         {% endfor %}
                     </tbody>
                 </table>
@@ -212,61 +241,61 @@
     </div>
 
     <!-- Breakdown Charts Row -->
-    <div class="chart-row">
-        <div class="chart-container chart-half">
-            <h3>상태별 분포</h3>
-            <div class="chart-wrapper chart-wrapper-small">
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+        <div class="bg-white rounded-lg border border-gray-200 p-6">
+            <h3 class="text-base font-semibold text-gray-900 mb-4">상태별 분포</h3>
+            <div class="chart-container-small">
                 <canvas id="statusChart"></canvas>
             </div>
-            <details class="chart-data-table">
-                <summary>데이터 테이블 보기</summary>
-                <div class="table-wrapper">
-                    <table>
+            <details class="mt-4 pt-4 border-t border-gray-100">
+                <summary class="text-sm text-gray-500 cursor-pointer hover:text-gray-700">데이터 테이블 보기</summary>
+                <div class="mt-3 overflow-x-auto">
+                    <table class="min-w-full text-sm">
                         <thead>
-                            <tr>
-                                <th>상태</th>
-                                <th class="number">건수</th>
+                            <tr class="border-b border-gray-200">
+                                <th class="text-left py-2 px-3 font-medium text-gray-900">상태</th>
+                                <th class="text-right py-2 px-3 font-medium text-gray-900">건수</th>
                             </tr>
                         </thead>
-                        <tbody>
+                        <tbody class="divide-y divide-gray-100">
                             {% for item in stats.charts.by_status %}
                             <tr>
-                                <td><span class="status-dot" style="background-color: {{ item.color }};"></span> {{ item.label }}</td>
-                                <td class="number">{{ item.count }}건</td>
+                                <td class="py-2 px-3 text-gray-600"><span class="inline-block w-2.5 h-2.5 rounded-full mr-2" style="background-color: {{ item.color }};"></span> {{ item.label }}</td>
+                                <td class="py-2 px-3 text-right text-gray-900">{{ item.count }}건</td>
                             </tr>
                             {% empty %}
-                            <tr><td colspan="2" class="empty">데이터 없음</td></tr>
+                            <tr><td colspan="2" class="py-4 text-center text-gray-400">데이터 없음</td></tr>
                             {% endfor %}
                         </tbody>
                     </table>
                 </div>
             </details>
         </div>
-        <div class="chart-container chart-half">
-            <h3>결제수단별 매출</h3>
-            <div class="chart-wrapper chart-wrapper-small">
+        <div class="bg-white rounded-lg border border-gray-200 p-6">
+            <h3 class="text-base font-semibold text-gray-900 mb-4">결제수단별 매출</h3>
+            <div class="chart-container-small">
                 <canvas id="methodChart"></canvas>
             </div>
-            <details class="chart-data-table">
-                <summary>데이터 테이블 보기</summary>
-                <div class="table-wrapper">
-                    <table>
+            <details class="mt-4 pt-4 border-t border-gray-100">
+                <summary class="text-sm text-gray-500 cursor-pointer hover:text-gray-700">데이터 테이블 보기</summary>
+                <div class="mt-3 overflow-x-auto">
+                    <table class="min-w-full text-sm">
                         <thead>
-                            <tr>
-                                <th>결제수단</th>
-                                <th class="number">건수</th>
-                                <th class="number">매출</th>
+                            <tr class="border-b border-gray-200">
+                                <th class="text-left py-2 px-3 font-medium text-gray-900">결제수단</th>
+                                <th class="text-right py-2 px-3 font-medium text-gray-900">건수</th>
+                                <th class="text-right py-2 px-3 font-medium text-gray-900">매출</th>
                             </tr>
                         </thead>
-                        <tbody>
+                        <tbody class="divide-y divide-gray-100">
                             {% for item in stats.charts.by_method %}
                             <tr>
-                                <td>{{ item.label }}</td>
-                                <td class="number">{{ item.count }}건</td>
-                                <td class="number">₩{{ item.revenue|floatformat:0 }}</td>
+                                <td class="py-2 px-3 text-gray-600">{{ item.label }}</td>
+                                <td class="py-2 px-3 text-right text-gray-900">{{ item.count }}건</td>
+                                <td class="py-2 px-3 text-right text-gray-900">₩{{ item.revenue|floatformat:0 }}</td>
                             </tr>
                             {% empty %}
-                            <tr><td colspan="3" class="empty">데이터 없음</td></tr>
+                            <tr><td colspan="3" class="py-4 text-center text-gray-400">데이터 없음</td></tr>
                             {% endfor %}
                         </tbody>
                     </table>
@@ -276,8 +305,8 @@
     </div>
 
     <!-- Back to list link -->
-    <div class="dashboard-footer">
-        <a href="{% url opts|admin_urlname:'changelist' %}" class="button">
+    <div class="flex gap-3 pt-6 border-t border-gray-200">
+        <a href="{% url opts|admin_urlname:'changelist' %}" class="inline-flex items-center px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-md hover:bg-indigo-700">
             ← 목록으로 돌아가기
         </a>
     </div>
@@ -293,7 +322,7 @@ document.addEventListener('DOMContentLoaded', function() {
         customStartDate: '{{ custom_start_date }}',
         customEndDate: '{{ custom_end_date }}',
         today: '{{ today }}',
-        exportUrl: 'export/'
+        exportUrl: '?export=csv'
     });
 });
 </script>

@@ -1,6 +1,6 @@
 [project]
 name = "django-easypay"
-version = "1.1.0"
+version = "1.2.0"
 description = "Django payment integration for EasyPay (KICC) PG"
 readme = "README.md"
 license = { text = "MIT" }
