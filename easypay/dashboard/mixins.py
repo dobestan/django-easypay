@@ -19,6 +19,7 @@ if TYPE_CHECKING:
 
 class PaymentStatisticsMixin:
     statistics_template: str = "easypay/dashboard/base.html"
+    change_list_template: str = "easypay/admin/payment_changelist.html"
     default_date_range: str = "month"
 
     VALID_DATE_RANGES: tuple[str, ...] = ("today", "7d", "month", "30d", "90d", "custom")
@@ -160,3 +161,10 @@ class PaymentStatisticsMixin:
 
         info = self._get_model_info()
         return reverse(f"admin:{info}_statistics")
+
+    def changelist_view(
+        self, request: HttpRequest, extra_context: dict[str, object] | None = None
+    ) -> HttpResponse:
+        extra_context = extra_context or {}
+        extra_context["statistics_url"] = self._get_statistics_link()
+        return super().changelist_view(request, extra_context)  # type: ignore[misc]
