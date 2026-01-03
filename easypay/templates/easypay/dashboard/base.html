@@ -7,44 +7,8 @@
 {{ block.super }}
 <link rel="stylesheet" crossorigin
   href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" />
-<link rel="stylesheet" href="{% static 'css/dist/styles.css' %}" />
+<link rel="stylesheet" href="{% static 'easypay/dashboard/dashboard.css' %}" />
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-<style>
-    .chart-container { position: relative; height: 300px; }
-    .chart-container-small { height: 250px; }
-    
-    /* Date Range Selector Active State */
-    .date-range-selector button.active {
-        background-color: #4f46e5 !important;
-        color: white !important;
-        border-color: #4f46e5 !important;
-    }
-
-    /* Calendar Styles */
-    .calendar-day {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        height: 2.5rem;
-        cursor: pointer;
-        border-radius: 9999px;
-        font-size: 0.875rem;
-        color: #374151;
-    }
-    .calendar-day:hover:not(.empty):not(.future) {
-        background-color: #f3f4f6;
-    }
-    .calendar-day.weekend { color: #ef4444; }
-    .calendar-day.sunday { color: #ef4444; }
-    .calendar-day.saturday { color: #2563eb; }
-    .calendar-day.empty { cursor: default; }
-    .calendar-day.future { color: #d1d5db; cursor: not-allowed; }
-    .calendar-day.selected { background-color: #e0e7ff; color: #4338ca; }
-    .calendar-day.range-start, .calendar-day.range-end {
-        background-color: #4f46e5;
-        color: white;
-    }
-</style>
 {% endblock %}
 
 {% block breadcrumbs %}
@@ -58,7 +22,6 @@
 
 {% block content %}
 <div id="easypay-dashboard" class="max-w-7xl mx-auto px-4 py-6">
-    <!-- Header with Date Range Selector -->
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
         <h1 class="text-2xl font-bold text-gray-900">{{ title }}</h1>
         <div class="date-range-selector flex flex-wrap gap-2">
@@ -83,7 +46,6 @@
         </div>
     </div>
 
-    <!-- Custom Date Range Picker -->
     <div id="customDatePicker" class="bg-gray-50 rounded-lg p-4 mb-6" {% if date_range != 'custom' %}style="display: none;"{% endif %}>
         <div class="flex flex-wrap items-end gap-4 mb-6">
             <div class="flex flex-col">
@@ -118,7 +80,6 @@
         </div>
     </div>
 
-    <!-- Summary Cards -->
     <dl class="grid grid-cols-1 gap-px bg-gray-900/5 sm:grid-cols-2 lg:grid-cols-4 rounded-lg overflow-hidden mb-6">
         <div class="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-2 bg-white px-4 py-8 sm:px-6">
             <dt class="text-sm font-medium text-gray-500">💰 총 매출</dt>
@@ -165,7 +126,6 @@
         </div>
     </dl>
 
-    <!-- Main Revenue Trend Chart -->
     <div class="bg-white rounded-lg border border-gray-200 p-6 mb-6">
         <h3 class="text-base font-semibold text-gray-900 mb-4">일별 매출 추이</h3>
         <div class="chart-container">
@@ -198,7 +158,6 @@
         </details>
     </div>
 
-    <!-- Period Comparison Chart -->
     <div class="bg-white rounded-lg border border-gray-200 p-6 mb-6">
         <h3 class="text-base font-semibold text-gray-900 mb-4">기간 비교 (현재 vs 이전)</h3>
         <p class="comparison-period-info text-sm text-gray-500 mb-4">
@@ -242,7 +201,6 @@
         </details>
     </div>
 
-    <!-- Breakdown Charts Row -->
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
         <div class="bg-white rounded-lg border border-gray-200 p-6">
             <h3 class="text-base font-semibold text-gray-900 mb-4">상태별 분포</h3>
@@ -306,7 +264,6 @@
         </div>
     </div>
 
-    <!-- Back to list link -->
     <div class="flex gap-3 pt-6 border-t border-gray-200">
         <a href="{% url opts|admin_urlname:'changelist' %}" class="inline-flex items-center px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-md hover:bg-indigo-700">
             ← 목록으로 돌아가기

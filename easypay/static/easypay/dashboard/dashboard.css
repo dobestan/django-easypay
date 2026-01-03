@@ -619,3 +619,189 @@
         font-size: 12px;
     }
 }
+
+/* ============================================
+   Tailwind Utility Classes for Dashboard
+   Scoped to #easypay-dashboard for isolation
+   ============================================ */
+
+/* Layout - Display */
+#easypay-dashboard .flex { display: flex; }
+#easypay-dashboard .inline-flex { display: inline-flex; }
+#easypay-dashboard .grid { display: grid; }
+#easypay-dashboard .inline-block { display: inline-block; }
+#easypay-dashboard .block { display: block; }
+#easypay-dashboard .hidden { display: none; }
+
+/* Flex Direction */
+#easypay-dashboard .flex-col { flex-direction: column; }
+#easypay-dashboard .flex-row { flex-direction: row; }
+#easypay-dashboard .flex-wrap { flex-wrap: wrap; }
+#easypay-dashboard .flex-none { flex: none; }
+
+/* Flex Alignment */
+#easypay-dashboard .items-center { align-items: center; }
+#easypay-dashboard .items-start { align-items: flex-start; }
+#easypay-dashboard .items-end { align-items: flex-end; }
+#easypay-dashboard .items-baseline { align-items: baseline; }
+#easypay-dashboard .justify-center { justify-content: center; }
+#easypay-dashboard .justify-between { justify-content: space-between; }
+#easypay-dashboard .justify-start { justify-content: flex-start; }
+#easypay-dashboard .justify-end { justify-content: flex-end; }
+
+/* Grid */
+#easypay-dashboard .grid-cols-1 { grid-template-columns: repeat(1, minmax(0, 1fr)); }
+#easypay-dashboard .grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+#easypay-dashboard .grid-cols-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+#easypay-dashboard .grid-cols-7 { grid-template-columns: repeat(7, minmax(0, 1fr)); }
+
+/* Gap */
+#easypay-dashboard .gap-2 { gap: 0.5rem; }
+#easypay-dashboard .gap-3 { gap: 0.75rem; }
+#easypay-dashboard .gap-4 { gap: 1rem; }
+#easypay-dashboard .gap-6 { gap: 1.5rem; }
+#easypay-dashboard .gap-px { gap: 1px; }
+#easypay-dashboard .gap-x-4 { column-gap: 1rem; }
+#easypay-dashboard .gap-y-2 { row-gap: 0.5rem; }
+
+/* Width & Height */
+#easypay-dashboard .w-full { width: 100%; }
+#easypay-dashboard .w-2\.5 { width: 0.625rem; }
+#easypay-dashboard .h-2\.5 { height: 0.625rem; }
+#easypay-dashboard .h-10 { height: 2.5rem; }
+#easypay-dashboard .min-w-full { min-width: 100%; }
+#easypay-dashboard .min-w-\[100px\] { min-width: 100px; }
+#easypay-dashboard .max-w-7xl { max-width: 80rem; }
+#easypay-dashboard .max-w-md { max-width: 28rem; }
+
+/* Margin */
+#easypay-dashboard .mx-auto { margin-left: auto; margin-right: auto; }
+#easypay-dashboard .mb-1 { margin-bottom: 0.25rem; }
+#easypay-dashboard .mb-4 { margin-bottom: 1rem; }
+#easypay-dashboard .mb-6 { margin-bottom: 1.5rem; }
+#easypay-dashboard .mt-3 { margin-top: 0.75rem; }
+#easypay-dashboard .mt-4 { margin-top: 1rem; }
+#easypay-dashboard .mr-2 { margin-right: 0.5rem; }
+
+/* Padding */
+#easypay-dashboard .px-3 { padding-left: 0.75rem; padding-right: 0.75rem; }
+#easypay-dashboard .px-4 { padding-left: 1rem; padding-right: 1rem; }
+#easypay-dashboard .px-6 { padding-left: 1.5rem; padding-right: 1.5rem; }
+#easypay-dashboard .py-2 { padding-top: 0.5rem; padding-bottom: 0.5rem; }
+#easypay-dashboard .py-4 { padding-top: 1rem; padding-bottom: 1rem; }
+#easypay-dashboard .py-6 { padding-left: 1.5rem; padding-right: 1.5rem; }
+#easypay-dashboard .py-8 { padding-top: 2rem; padding-bottom: 2rem; }
+#easypay-dashboard .pt-4 { padding-top: 1rem; }
+#easypay-dashboard .pt-6 { padding-top: 1.5rem; }
+#easypay-dashboard .pb-2 { padding-bottom: 0.5rem; }
+#easypay-dashboard .p-2 { padding: 0.5rem; }
+#easypay-dashboard .p-4 { padding: 1rem; }
+#easypay-dashboard .p-6 { padding: 1.5rem; }
+
+/* Typography - Font Size */
+#easypay-dashboard .text-xs { font-size: 0.75rem; line-height: 1rem; }
+#easypay-dashboard .text-sm { font-size: 0.875rem; line-height: 1.25rem; }
+#easypay-dashboard .text-base { font-size: 1rem; line-height: 1.5rem; }
+#easypay-dashboard .text-lg { font-size: 1.125rem; line-height: 1.75rem; }
+#easypay-dashboard .text-2xl { font-size: 1.5rem; line-height: 2rem; }
+#easypay-dashboard .text-3xl { font-size: 1.875rem; line-height: 2.25rem; }
+
+/* Typography - Font Weight */
+#easypay-dashboard .font-medium { font-weight: 500; }
+#easypay-dashboard .font-semibold { font-weight: 600; }
+#easypay-dashboard .font-bold { font-weight: 700; }
+
+/* Typography - Text Alignment */
+#easypay-dashboard .text-left { text-align: left; }
+#easypay-dashboard .text-center { text-align: center; }
+#easypay-dashboard .text-right { text-align: right; }
+
+/* Typography - Tracking */
+#easypay-dashboard .tracking-tight { letter-spacing: -0.025em; }
+
+/* Colors - Text */
+#easypay-dashboard .text-white { color: #ffffff; }
+#easypay-dashboard .text-gray-400 { color: #9ca3af; }
+#easypay-dashboard .text-gray-500 { color: #6b7280; }
+#easypay-dashboard .text-gray-600 { color: #4b5563; }
+#easypay-dashboard .text-gray-700 { color: #374151; }
+#easypay-dashboard .text-gray-900 { color: #111827; }
+#easypay-dashboard .text-emerald-600 { color: #059669; }
+#easypay-dashboard .text-rose-600 { color: #e11d48; }
+#easypay-dashboard .text-indigo-600 { color: #4f46e5; }
+#easypay-dashboard .text-blue-600 { color: #2563eb; }
+
+/* Colors - Background */
+#easypay-dashboard .bg-white { background-color: #ffffff; }
+#easypay-dashboard .bg-gray-50 { background-color: #f9fafb; }
+#easypay-dashboard .bg-gray-100 { background-color: #f3f4f6; }
+#easypay-dashboard .bg-gray-900\/5 { background-color: rgba(17, 24, 39, 0.05); }
+#easypay-dashboard .bg-indigo-600 { background-color: #4f46e5; }
+#easypay-dashboard .bg-emerald-600 { background-color: #059669; }
+#easypay-dashboard .bg-emerald-100 { background-color: #d1fae5; }
+#easypay-dashboard .bg-rose-100 { background-color: #ffe4e6; }
+#easypay-dashboard .bg-yellow-100 { background-color: #fef3c7; }
+#easypay-dashboard .bg-e0e7ff { background-color: #e0e7ff; }
+
+/* Border */
+#easypay-dashboard .border { border-width: 1px; border-style: solid; }
+#easypay-dashboard .border-t { border-top-width: 1px; border-top-style: solid; }
+#easypay-dashboard .border-b { border-bottom-width: 1px; border-bottom-style: solid; }
+#easypay-dashboard .border-gray-100 { border-color: #f3f4f6; }
+#easypay-dashboard .border-gray-200 { border-color: #e5e7eb; }
+#easypay-dashboard .border-gray-300 { border-color: #d1d5db; }
+
+/* Border Radius */
+#easypay-dashboard .rounded { border-radius: 0.25rem; }
+#easypay-dashboard .rounded-md { border-radius: 0.375rem; }
+#easypay-dashboard .rounded-lg { border-radius: 0.5rem; }
+#easypay-dashboard .rounded-full { border-radius: 9999px; }
+
+/* Ring */
+#easypay-dashboard .ring-1 { box-shadow: 0 0 0 1px var(--ring-color, #e5e7eb); }
+#easypay-dashboard .ring-gray-200 { --ring-color: #e5e7eb; }
+
+/* Overflow */
+#easypay-dashboard .overflow-hidden { overflow: hidden; }
+#easypay-dashboard .overflow-x-auto { overflow-x: auto; }
+
+/* Cursor */
+#easypay-dashboard .cursor-pointer { cursor: pointer; }
+#easypay-dashboard .cursor-not-allowed { cursor: not-allowed; }
+
+/* Divide */
+#easypay-dashboard .divide-y > * + * { border-top-width: 1px; border-top-style: solid; }
+#easypay-dashboard .divide-gray-100 > * + * { border-color: #f3f4f6; }
+
+/* Hover States */
+#easypay-dashboard .hover\:bg-gray-50:hover { background-color: #f9fafb; }
+#easypay-dashboard .hover\:bg-indigo-700:hover { background-color: #4338ca; }
+#easypay-dashboard .hover\:bg-emerald-700:hover { background-color: #047857; }
+#easypay-dashboard .hover\:text-gray-600:hover { color: #4b5563; }
+#easypay-dashboard .hover\:text-gray-700:hover { color: #374151; }
+
+/* Focus States */
+#easypay-dashboard .focus\:ring-indigo-500:focus { box-shadow: 0 0 0 2px #6366f1; }
+#easypay-dashboard .focus\:border-indigo-500:focus { border-color: #6366f1; }
+
+/* Position */
+#easypay-dashboard .relative { position: relative; }
+#easypay-dashboard .absolute { position: absolute; }
+
+/* Responsive - SM (640px+) */
+@media (min-width: 640px) {
+    #easypay-dashboard .sm\:flex-row { flex-direction: row; }
+    #easypay-dashboard .sm\:items-center { align-items: center; }
+    #easypay-dashboard .sm\:justify-between { justify-content: space-between; }
+    #easypay-dashboard .sm\:grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    #easypay-dashboard .sm\:px-6 { padding-left: 1.5rem; padding-right: 1.5rem; }
+}
+
+/* Responsive - LG (1024px+) */
+@media (min-width: 1024px) {
+    #easypay-dashboard .lg\:grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    #easypay-dashboard .lg\:grid-cols-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
+
+/* Additional text colors for calendar */
+#easypay-dashboard .text-rose-600 { color: #e11d48; }
