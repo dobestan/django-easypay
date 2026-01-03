@@ -177,6 +177,82 @@ def format_currency(value: int | Decimal) -> str:
     return f"₩{int(value):,}"
 
 
+class CalendarDayData(TypedDict):
+    """Calendar day data point."""
+
+    date: str
+    day: int
+    revenue: int
+    count: int
+
+
+def get_payment_calendar_data(
+    queryset: QuerySet,
+    year: int,
+    month: int,
+) -> list[CalendarDayData]:
+    """
+    Get calendar data for a specific month.
+
+    Args:
+        queryset: Base queryset of payments
+        year: Year
+        month: Month (1-12)
+
+    Returns:
+        List of daily data for the calendar
+    """
+    from calendar import monthrange
+
+    start_date = date(year, month, 1)
+    _, last_day = monthrange(year, month)
+    end_date = date(year, month, last_day)
+
+    monthly_qs = queryset.filter(
+        status=PaymentStatus.COMPLETED,
+        paid_at__date__gte=start_date,
+        paid_at__date__lte=end_date,
+    )
+
+    daily_qs = (
+        monthly_qs.annotate(date=TruncDate("paid_at"))
+        .values("date")
+        .annotate(
+            revenue=Sum("amount"),
+            count=Count("id"),
+        )
+        .order_by("date")
+    )
+
+    daily_dict = {item["date"]: item for item in daily_qs}
+
+    calendar_data: list[CalendarDayData] = []
+    current_date = start_date
+    while current_date <= end_date:
+        if current_date in daily_dict:
+            item = daily_dict[current_date]
+            calendar_data.append(
+                {
+                    "date": current_date.isoformat(),
+                    "day": current_date.day,
+                    "revenue": int(item["revenue"] or 0),
+                    "count": item["count"],
+                }
+            )
+        else:
+            calendar_data.append(
+                {
+                    "date": current_date.isoformat(),
+                    "day": current_date.day,
+                    "revenue": 0,
+                    "count": 0,
+                }
+            )
+        current_date += timedelta(days=1)
+
+    return calendar_data
+
+
 def get_dashboard_statistics(
     queryset: QuerySet,
     date_range: str = "7d",

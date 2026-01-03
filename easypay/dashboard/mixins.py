@@ -11,7 +11,12 @@ from django.template.response import TemplateResponse
 from django.urls import URLPattern, path
 from django.utils import timezone
 
-from .statistics import DashboardStats, get_dashboard_statistics, parse_date_range
+from .statistics import (
+    DashboardStats,
+    get_dashboard_statistics,
+    get_payment_calendar_data,
+    parse_date_range,
+)
 
 if TYPE_CHECKING:
     from django.db.models import QuerySet
@@ -33,6 +38,11 @@ class PaymentStatisticsMixin:
                 "statistics/",
                 self.admin_site.admin_view(self.statistics_view),  # type: ignore[attr-defined]
                 name=f"{info}_statistics",
+            ),
+            path(
+                "statistics/calendar/",
+                self.admin_site.admin_view(self.calendar_view),  # type: ignore[attr-defined]
+                name=f"{info}_statistics_calendar",
             ),
         ]
         return statistics_urls + urls
@@ -155,6 +165,27 @@ class PaymentStatisticsMixin:
             )
 
         return response
+
+    def calendar_view(self, request: HttpRequest) -> HttpResponse:
+        today = timezone.now().date()
+        year = int(request.GET.get("year", today.year))
+        month = int(request.GET.get("month", today.month))
+
+        if year < 2020 or year > 2100:
+            year = today.year
+        if month < 1 or month > 12:
+            month = today.month
+
+        queryset = self._get_statistics_queryset(request)
+        calendar_data = get_payment_calendar_data(queryset, year, month)
+
+        return JsonResponse(
+            {
+                "year": year,
+                "month": month,
+                "days": calendar_data,
+            }
+        )
 
     def _get_statistics_link(self) -> str:
         from django.urls import reverse

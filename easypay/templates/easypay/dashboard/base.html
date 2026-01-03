@@ -24,59 +24,13 @@
 <div id="easypay-dashboard" class="max-w-7xl mx-auto px-4 py-6">
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
         <h1 class="text-2xl font-bold text-gray-900">{{ title }}</h1>
-        <div class="date-range-selector flex flex-wrap gap-2">
-            <button type="button" data-range="month" class="px-4 py-2 text-sm font-medium rounded-md border {% if date_range == 'month' %}active{% else %}bg-white text-gray-700 border-gray-300 hover:bg-gray-50{% endif %}">
-                이번달
+        <div class="flex gap-2">
+            <button type="button" id="viewCalendar" class="px-4 py-2 text-sm font-medium rounded-md border bg-indigo-600 text-white border-indigo-600">
+                캘린더
             </button>
-            <button type="button" data-range="today" class="px-4 py-2 text-sm font-medium rounded-md border {% if date_range == 'today' %}active{% else %}bg-white text-gray-700 border-gray-300 hover:bg-gray-50{% endif %}">
-                오늘
+            <button type="button" id="viewCharts" class="px-4 py-2 text-sm font-medium rounded-md border bg-white text-gray-700 border-gray-300 hover:bg-gray-50">
+                차트
             </button>
-            <button type="button" data-range="7d" class="px-4 py-2 text-sm font-medium rounded-md border {% if date_range == '7d' %}active{% else %}bg-white text-gray-700 border-gray-300 hover:bg-gray-50{% endif %}">
-                7일
-            </button>
-            <button type="button" data-range="30d" class="px-4 py-2 text-sm font-medium rounded-md border {% if date_range == '30d' %}active{% else %}bg-white text-gray-700 border-gray-300 hover:bg-gray-50{% endif %}">
-                30일
-            </button>
-            <button type="button" data-range="90d" class="px-4 py-2 text-sm font-medium rounded-md border {% if date_range == '90d' %}active{% else %}bg-white text-gray-700 border-gray-300 hover:bg-gray-50{% endif %}">
-                90일
-            </button>
-            <button type="button" data-range="custom" id="customRangeBtn" class="px-4 py-2 text-sm font-medium rounded-md border {% if date_range == 'custom' %}active{% else %}bg-white text-gray-700 border-gray-300 hover:bg-gray-50{% endif %}">
-                직접선택
-            </button>
-        </div>
-    </div>
-
-    <div id="customDatePicker" class="bg-gray-50 rounded-lg p-4 mb-6" {% if date_range != 'custom' %}style="display: none;"{% endif %}>
-        <div class="flex flex-wrap items-end gap-4 mb-6">
-            <div class="flex flex-col">
-                <label for="startDate" class="text-xs font-medium text-gray-500 mb-1">시작일</label>
-                <input type="date" id="startDate" value="{{ custom_start_date }}" max="{{ today }}" class="px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-indigo-500 focus:border-indigo-500">
-            </div>
-            <span class="text-gray-400 pb-2">~</span>
-            <div class="flex flex-col">
-                <label for="endDate" class="text-xs font-medium text-gray-500 mb-1">종료일</label>
-                <input type="date" id="endDate" value="{{ custom_end_date }}" max="{{ today }}" class="px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-indigo-500 focus:border-indigo-500">
-            </div>
-            <button type="button" id="applyDateRange" class="px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-md hover:bg-indigo-700">적용</button>
-            <button type="button" id="exportCsv" class="px-4 py-2 bg-emerald-600 text-white text-sm font-medium rounded-md hover:bg-emerald-700">CSV 다운로드</button>
-        </div>
-        
-        <div class="calendar-container max-w-md">
-            <div class="flex items-center justify-center gap-4 mb-4">
-                <button type="button" id="prevMonth" class="p-2 text-gray-400 hover:text-gray-600">
-                    &lt;
-                </button>
-                <span id="calendarMonth" class="text-lg font-semibold text-gray-900 min-w-[100px] text-center"></span>
-                <button type="button" id="nextMonth" class="p-2 text-gray-400 hover:text-gray-600">
-                    &gt;
-                </button>
-            </div>
-            <div class="ring-1 ring-gray-200 rounded-lg overflow-hidden bg-white" id="calendarGrid">
-                <div class="grid grid-cols-7 text-center text-xs font-semibold text-gray-700 bg-gray-50 border-b border-gray-200">
-                    <span class="py-2">월</span><span class="py-2">화</span><span class="py-2">수</span><span class="py-2">목</span><span class="py-2">금</span><span class="py-2 text-blue-600">토</span><span class="py-2 text-rose-600">일</span>
-                </div>
-                <div class="grid grid-cols-7 text-sm" id="calendarDays"></div>
-            </div>
         </div>
     </div>
 
@@ -126,115 +80,93 @@
         </div>
     </dl>
 
-    <div class="bg-white rounded-lg border border-gray-200 p-6 mb-6">
-        <h3 class="text-base font-semibold text-gray-900 mb-4">일별 매출 추이</h3>
-        <div class="chart-container">
-            <canvas id="revenueTrendChart"></canvas>
-        </div>
-        <details class="mt-4 pt-4 border-t border-gray-100">
-            <summary class="text-sm text-gray-500 cursor-pointer hover:text-gray-700">데이터 테이블 보기</summary>
-            <div class="mt-3 overflow-x-auto">
-                <table class="min-w-full text-sm">
-                    <thead>
-                        <tr class="border-b border-gray-200">
-                            <th class="text-left py-2 px-3 font-medium text-gray-900">날짜</th>
-                            <th class="text-right py-2 px-3 font-medium text-gray-900">매출</th>
-                            <th class="text-right py-2 px-3 font-medium text-gray-900">건수</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-gray-100">
-                        {% for day in stats.charts.daily_trend %}
-                        <tr>
-                            <td class="py-2 px-3 text-gray-600">{{ day.date }}</td>
-                            <td class="py-2 px-3 text-right text-gray-900">₩{{ day.revenue|floatformat:0 }}</td>
-                            <td class="py-2 px-3 text-right text-gray-900">{{ day.count }}건</td>
-                        </tr>
-                        {% empty %}
-                        <tr><td colspan="3" class="py-4 text-center text-gray-400">데이터 없음</td></tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+    <div id="calendarView" class="bg-white rounded-lg border border-gray-200 p-6 mb-6">
+        <div class="flex items-center justify-between mb-6">
+            <h3 class="text-base font-semibold text-gray-900">월별 매출 캘린더</h3>
+            <div class="flex items-center gap-3">
+                <button type="button" id="calendarPrev" class="p-2 rounded-md hover:bg-gray-100">
+                    <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                    </svg>
+                </button>
+                <span id="calendarTitle" class="text-lg font-semibold text-gray-900 min-w-[140px] text-center"></span>
+                <button type="button" id="calendarNext" class="p-2 rounded-md hover:bg-gray-100">
+                    <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                    </svg>
+                </button>
+                <button type="button" id="calendarToday" class="ml-2 px-3 py-1.5 text-sm font-medium text-indigo-600 border border-indigo-300 rounded-md hover:bg-indigo-50">
+                    오늘
+                </button>
             </div>
-        </details>
+        </div>
+        
+        <div class="ring-1 ring-gray-200 rounded-lg overflow-hidden">
+            <div class="grid grid-cols-7 text-center text-xs font-semibold text-gray-700 bg-gray-50 border-b border-gray-200">
+                <span class="py-3">월</span>
+                <span class="py-3">화</span>
+                <span class="py-3">수</span>
+                <span class="py-3">목</span>
+                <span class="py-3">금</span>
+                <span class="py-3 text-blue-600">토</span>
+                <span class="py-3 text-rose-600">일</span>
+            </div>
+            <div id="calendarGrid" class="grid grid-cols-7 divide-x divide-y divide-gray-200 bg-gray-200"></div>
+        </div>
+        
+        <div class="mt-4 flex items-center gap-4 text-xs text-gray-500">
+            <span class="flex items-center gap-1">
+                <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+                매출 있음
+            </span>
+            <span>클릭하여 해당 일자 주문 목록 보기</span>
+        </div>
     </div>
 
-    <div class="bg-white rounded-lg border border-gray-200 p-6 mb-6">
-        <h3 class="text-base font-semibold text-gray-900 mb-4">기간 비교 (현재 vs 이전)</h3>
-        <p class="comparison-period-info text-sm text-gray-500 mb-4">
-            현재: {{ stats.meta.start_date }} ~ {{ stats.meta.end_date }} |
-            이전: {{ stats.meta.prev_start_date }} ~ {{ stats.meta.prev_end_date }}
-        </p>
-        <div class="chart-container">
-            <canvas id="comparisonChart"></canvas>
+    <div id="chartsView" class="hidden">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
+            <div class="date-range-selector flex flex-wrap gap-2">
+                <button type="button" data-range="month" class="px-4 py-2 text-sm font-medium rounded-md border {% if date_range == 'month' %}active{% else %}bg-white text-gray-700 border-gray-300 hover:bg-gray-50{% endif %}">
+                    이번달
+                </button>
+                <button type="button" data-range="today" class="px-4 py-2 text-sm font-medium rounded-md border {% if date_range == 'today' %}active{% else %}bg-white text-gray-700 border-gray-300 hover:bg-gray-50{% endif %}">
+                    오늘
+                </button>
+                <button type="button" data-range="7d" class="px-4 py-2 text-sm font-medium rounded-md border {% if date_range == '7d' %}active{% else %}bg-white text-gray-700 border-gray-300 hover:bg-gray-50{% endif %}">
+                    7일
+                </button>
+                <button type="button" data-range="30d" class="px-4 py-2 text-sm font-medium rounded-md border {% if date_range == '30d' %}active{% else %}bg-white text-gray-700 border-gray-300 hover:bg-gray-50{% endif %}">
+                    30일
+                </button>
+                <button type="button" data-range="90d" class="px-4 py-2 text-sm font-medium rounded-md border {% if date_range == '90d' %}active{% else %}bg-white text-gray-700 border-gray-300 hover:bg-gray-50{% endif %}">
+                    90일
+                </button>
+                <button type="button" data-range="custom" id="customRangeBtn" class="px-4 py-2 text-sm font-medium rounded-md border {% if date_range == 'custom' %}active{% else %}bg-white text-gray-700 border-gray-300 hover:bg-gray-50{% endif %}">
+                    직접선택
+                </button>
+            </div>
         </div>
-        <details class="mt-4 pt-4 border-t border-gray-100">
-            <summary class="text-sm text-gray-500 cursor-pointer hover:text-gray-700">데이터 테이블 보기</summary>
-            <div class="mt-3 overflow-x-auto">
-                <table class="min-w-full text-sm">
-                    <thead>
-                        <tr class="border-b border-gray-200">
-                            <th class="text-left py-2 px-3 font-medium text-gray-900">항목</th>
-                            <th class="text-right py-2 px-3 font-medium text-gray-900">현재 기간</th>
-                            <th class="text-right py-2 px-3 font-medium text-gray-900">이전 기간</th>
-                            <th class="text-right py-2 px-3 font-medium text-gray-900">변화</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-gray-100">
-                        {% for item in stats.comparison %}
-                        <tr>
-                            <td class="py-2 px-3 text-gray-600">{{ item.label }}</td>
-                            <td class="py-2 px-3 text-right text-gray-900">{% if item.label == '매출' or item.label == '평균금액' %}₩{{ item.current|floatformat:0 }}{% else %}{{ item.current }}건{% endif %}</td>
-                            <td class="py-2 px-3 text-right text-gray-900">{% if item.label == '매출' or item.label == '평균금액' %}₩{{ item.previous|floatformat:0 }}{% else %}{{ item.previous }}건{% endif %}</td>
-                            <td class="py-2 px-3 text-right font-medium {% if item.current > item.previous %}text-emerald-600{% elif item.current < item.previous %}text-rose-600{% endif %}">
-                                {% if item.previous > 0 %}
-                                    {% widthratio item.current item.previous 100 as change_pct %}
-                                    {% if item.current > item.previous %}↑{% elif item.current < item.previous %}↓{% endif %}
-                                {% endif %}
-                            </td>
-                        </tr>
-                        {% empty %}
-                        <tr><td colspan="4" class="py-4 text-center text-gray-400">데이터 없음</td></tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        </details>
-    </div>
 
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-        <div class="bg-white rounded-lg border border-gray-200 p-6">
-            <h3 class="text-base font-semibold text-gray-900 mb-4">상태별 분포</h3>
-            <div class="chart-container-small">
-                <canvas id="statusChart"></canvas>
-            </div>
-            <details class="mt-4 pt-4 border-t border-gray-100">
-                <summary class="text-sm text-gray-500 cursor-pointer hover:text-gray-700">데이터 테이블 보기</summary>
-                <div class="mt-3 overflow-x-auto">
-                    <table class="min-w-full text-sm">
-                        <thead>
-                            <tr class="border-b border-gray-200">
-                                <th class="text-left py-2 px-3 font-medium text-gray-900">상태</th>
-                                <th class="text-right py-2 px-3 font-medium text-gray-900">건수</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-gray-100">
-                            {% for item in stats.charts.by_status %}
-                            <tr>
-                                <td class="py-2 px-3 text-gray-600"><span class="inline-block w-2.5 h-2.5 rounded-full mr-2" style="background-color: {{ item.color }};"></span> {{ item.label }}</td>
-                                <td class="py-2 px-3 text-right text-gray-900">{{ item.count }}건</td>
-                            </tr>
-                            {% empty %}
-                            <tr><td colspan="2" class="py-4 text-center text-gray-400">데이터 없음</td></tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
+        <div id="customDatePicker" class="bg-gray-50 rounded-lg p-4 mb-6" {% if date_range != 'custom' %}style="display: none;"{% endif %}>
+            <div class="flex flex-wrap items-end gap-4">
+                <div class="flex flex-col">
+                    <label for="startDate" class="text-xs font-medium text-gray-500 mb-1">시작일</label>
+                    <input type="date" id="startDate" value="{{ custom_start_date }}" max="{{ today }}" class="px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-indigo-500 focus:border-indigo-500">
                 </div>
-            </details>
+                <span class="text-gray-400 pb-2">~</span>
+                <div class="flex flex-col">
+                    <label for="endDate" class="text-xs font-medium text-gray-500 mb-1">종료일</label>
+                    <input type="date" id="endDate" value="{{ custom_end_date }}" max="{{ today }}" class="px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-indigo-500 focus:border-indigo-500">
+                </div>
+                <button type="button" id="applyDateRange" class="px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-md hover:bg-indigo-700">적용</button>
+                <button type="button" id="exportCsv" class="px-4 py-2 bg-emerald-600 text-white text-sm font-medium rounded-md hover:bg-emerald-700">CSV 다운로드</button>
+            </div>
         </div>
-        <div class="bg-white rounded-lg border border-gray-200 p-6">
-            <h3 class="text-base font-semibold text-gray-900 mb-4">결제수단별 매출</h3>
-            <div class="chart-container-small">
-                <canvas id="methodChart"></canvas>
+
+        <div class="bg-white rounded-lg border border-gray-200 p-6 mb-6">
+            <h3 class="text-base font-semibold text-gray-900 mb-4">일별 매출 추이</h3>
+            <div class="chart-container">
+                <canvas id="revenueTrendChart"></canvas>
             </div>
             <details class="mt-4 pt-4 border-t border-gray-100">
                 <summary class="text-sm text-gray-500 cursor-pointer hover:text-gray-700">데이터 테이블 보기</summary>
@@ -242,17 +174,17 @@
                     <table class="min-w-full text-sm">
                         <thead>
                             <tr class="border-b border-gray-200">
-                                <th class="text-left py-2 px-3 font-medium text-gray-900">결제수단</th>
-                                <th class="text-right py-2 px-3 font-medium text-gray-900">건수</th>
+                                <th class="text-left py-2 px-3 font-medium text-gray-900">날짜</th>
                                 <th class="text-right py-2 px-3 font-medium text-gray-900">매출</th>
+                                <th class="text-right py-2 px-3 font-medium text-gray-900">건수</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-100">
-                            {% for item in stats.charts.by_method %}
+                            {% for day in stats.charts.daily_trend %}
                             <tr>
-                                <td class="py-2 px-3 text-gray-600">{{ item.label }}</td>
-                                <td class="py-2 px-3 text-right text-gray-900">{{ item.count }}건</td>
-                                <td class="py-2 px-3 text-right text-gray-900">₩{{ item.revenue|floatformat:0 }}</td>
+                                <td class="py-2 px-3 text-gray-600">{{ day.date }}</td>
+                                <td class="py-2 px-3 text-right text-gray-900">₩{{ day.revenue|floatformat:0 }}</td>
+                                <td class="py-2 px-3 text-right text-gray-900">{{ day.count }}건</td>
                             </tr>
                             {% empty %}
                             <tr><td colspan="3" class="py-4 text-center text-gray-400">데이터 없음</td></tr>
@@ -261,6 +193,32 @@
                     </table>
                 </div>
             </details>
+        </div>
+
+        <div class="bg-white rounded-lg border border-gray-200 p-6 mb-6">
+            <h3 class="text-base font-semibold text-gray-900 mb-4">기간 비교 (현재 vs 이전)</h3>
+            <p class="comparison-period-info text-sm text-gray-500 mb-4">
+                현재: {{ stats.meta.start_date }} ~ {{ stats.meta.end_date }} |
+                이전: {{ stats.meta.prev_start_date }} ~ {{ stats.meta.prev_end_date }}
+            </p>
+            <div class="chart-container">
+                <canvas id="comparisonChart"></canvas>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+            <div class="bg-white rounded-lg border border-gray-200 p-6">
+                <h3 class="text-base font-semibold text-gray-900 mb-4">상태별 분포</h3>
+                <div class="chart-container-small">
+                    <canvas id="statusChart"></canvas>
+                </div>
+            </div>
+            <div class="bg-white rounded-lg border border-gray-200 p-6">
+                <h3 class="text-base font-semibold text-gray-900 mb-4">결제수단별 매출</h3>
+                <div class="chart-container-small">
+                    <canvas id="methodChart"></canvas>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -274,15 +232,161 @@
 <script src="{% static 'easypay/dashboard/dashboard.js' %}"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    EasyPayDashboard.init({
-        apiUrl: '{{ api_url }}',
-        initialRange: '{{ date_range }}',
-        chartData: {{ chart_data|safe }},
-        customStartDate: '{{ custom_start_date }}',
-        customEndDate: '{{ custom_end_date }}',
-        today: '{{ today }}',
-        exportUrl: '?export=csv'
+    const calendarView = document.getElementById('calendarView');
+    const chartsView = document.getElementById('chartsView');
+    const viewCalendarBtn = document.getElementById('viewCalendar');
+    const viewChartsBtn = document.getElementById('viewCharts');
+    const calendarGrid = document.getElementById('calendarGrid');
+    const calendarTitle = document.getElementById('calendarTitle');
+    const orderListUrl = "{% url opts|admin_urlname:'changelist' %}";
+
+    let currentYear = new Date().getFullYear();
+    let currentMonth = new Date().getMonth() + 1;
+
+    function showCalendar() {
+        calendarView.classList.remove('hidden');
+        chartsView.classList.add('hidden');
+        viewCalendarBtn.classList.remove('bg-white', 'text-gray-700', 'border-gray-300');
+        viewCalendarBtn.classList.add('bg-indigo-600', 'text-white', 'border-indigo-600');
+        viewChartsBtn.classList.remove('bg-indigo-600', 'text-white', 'border-indigo-600');
+        viewChartsBtn.classList.add('bg-white', 'text-gray-700', 'border-gray-300');
+    }
+
+    function showCharts() {
+        calendarView.classList.add('hidden');
+        chartsView.classList.remove('hidden');
+        viewChartsBtn.classList.remove('bg-white', 'text-gray-700', 'border-gray-300');
+        viewChartsBtn.classList.add('bg-indigo-600', 'text-white', 'border-indigo-600');
+        viewCalendarBtn.classList.remove('bg-indigo-600', 'text-white', 'border-indigo-600');
+        viewCalendarBtn.classList.add('bg-white', 'text-gray-700', 'border-gray-300');
+        
+        if (!window.chartsInitialized) {
+            EasyPayDashboard.init({
+                apiUrl: '{{ api_url }}',
+                initialRange: '{{ date_range }}',
+                chartData: {{ chart_data|safe }},
+                customStartDate: '{{ custom_start_date }}',
+                customEndDate: '{{ custom_end_date }}',
+                today: '{{ today }}',
+                exportUrl: '?export=csv'
+            });
+            window.chartsInitialized = true;
+        }
+    }
+
+    viewCalendarBtn.addEventListener('click', showCalendar);
+    viewChartsBtn.addEventListener('click', showCharts);
+
+    function formatCurrency(value) {
+        return '₩' + value.toLocaleString('ko-KR');
+    }
+
+    function getFirstDayOfMonth(year, month) {
+        const day = new Date(year, month - 1, 1).getDay();
+        return day === 0 ? 6 : day - 1;
+    }
+
+    function renderCalendar(year, month, days) {
+        const monthNames = ['1월', '2월', '3월', '4월', '5월', '6월', '7월', '8월', '9월', '10월', '11월', '12월'];
+        calendarTitle.textContent = `${year}년 ${monthNames[month - 1]}`;
+
+        calendarGrid.innerHTML = '';
+
+        const firstDay = getFirstDayOfMonth(year, month);
+        const today = new Date();
+        const isCurrentMonth = year === today.getFullYear() && month === today.getMonth() + 1;
+
+        for (let i = 0; i < firstDay; i++) {
+            const emptyCell = document.createElement('div');
+            emptyCell.className = 'bg-gray-50 min-h-[100px] p-2';
+            calendarGrid.appendChild(emptyCell);
+        }
+
+        days.forEach((day) => {
+            const cell = document.createElement('div');
+            const isToday = isCurrentMonth && day.day === today.getDate();
+            const hasRevenue = day.revenue > 0;
+            const dayOfWeek = (firstDay + day.day - 1) % 7;
+            const isSaturday = dayOfWeek === 5;
+            const isSunday = dayOfWeek === 6;
+
+            cell.className = `bg-white min-h-[100px] p-2 cursor-pointer hover:bg-gray-50 transition-colors ${isToday ? 'ring-2 ring-inset ring-indigo-500' : ''}`;
+            
+            let dayClass = 'text-sm font-medium';
+            if (isSaturday) dayClass += ' text-blue-600';
+            else if (isSunday) dayClass += ' text-rose-600';
+            else dayClass += ' text-gray-900';
+
+            cell.innerHTML = `
+                <div class="flex items-center gap-1 mb-1">
+                    <span class="${dayClass}">${day.day}</span>
+                    ${hasRevenue ? '<span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>' : ''}
+                </div>
+                ${hasRevenue ? `
+                    <div class="text-xs text-gray-600 space-y-0.5">
+                        <div class="font-semibold text-emerald-600">${formatCurrency(day.revenue)}</div>
+                        <div>${day.count}건</div>
+                    </div>
+                ` : ''}
+            `;
+
+            cell.addEventListener('click', () => {
+                const url = `${orderListUrl}?status=completed&paid_at__date__gte=${day.date}&paid_at__date__lte=${day.date}`;
+                window.location.href = url;
+            });
+
+            calendarGrid.appendChild(cell);
+        });
+
+        const totalCells = firstDay + days.length;
+        const remainingCells = (7 - (totalCells % 7)) % 7;
+        for (let i = 0; i < remainingCells; i++) {
+            const emptyCell = document.createElement('div');
+            emptyCell.className = 'bg-gray-50 min-h-[100px] p-2';
+            calendarGrid.appendChild(emptyCell);
+        }
+    }
+
+    function loadCalendar(year, month) {
+        currentYear = year;
+        currentMonth = month;
+        
+        fetch(`calendar/?year=${year}&month=${month}`)
+            .then(response => response.json())
+            .then(data => {
+                renderCalendar(data.year, data.month, data.days);
+            })
+            .catch(error => {
+                console.error('Calendar load failed:', error);
+            });
+    }
+
+    document.getElementById('calendarPrev').addEventListener('click', () => {
+        let newMonth = currentMonth - 1;
+        let newYear = currentYear;
+        if (newMonth < 1) {
+            newMonth = 12;
+            newYear--;
+        }
+        loadCalendar(newYear, newMonth);
     });
+
+    document.getElementById('calendarNext').addEventListener('click', () => {
+        let newMonth = currentMonth + 1;
+        let newYear = currentYear;
+        if (newMonth > 12) {
+            newMonth = 1;
+            newYear++;
+        }
+        loadCalendar(newYear, newMonth);
+    });
+
+    document.getElementById('calendarToday').addEventListener('click', () => {
+        const today = new Date();
+        loadCalendar(today.getFullYear(), today.getMonth() + 1);
+    });
+
+    loadCalendar(currentYear, currentMonth);
 });
 </script>
 {% endblock %}
