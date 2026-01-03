@@ -18,6 +18,7 @@ from django.contrib.admin.sites import AdminSite
 from django.test import RequestFactory
 
 from easypay.client import EasyPayClient
+from easypay.exceptions import EasyPayError
 from easypay.models import PaymentStatus
 from easypay.sandbox.admin import SandboxPaymentAdmin
 from easypay.sandbox.models import SandboxPayment
@@ -172,7 +173,7 @@ class TestClientAPILogging:
         )
 
         with caplog.at_level(logging.ERROR):
-            with pytest.raises(Exception):
+            with pytest.raises(EasyPayError):
                 client.register_payment(
                     payment=payment,
                     return_url="https://example.com/callback",

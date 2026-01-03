@@ -1,0 +1,195 @@
+{% extends "admin/base_site.html" %}
+{% load static i18n admin_urls %}
+
+{% block title %}{{ title }} | {{ site_title|default:_('Django site admin') }}{% endblock %}
+
+{% block extrahead %}
+{{ block.super }}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<link rel="stylesheet" href="{% static 'easypay/dashboard/dashboard.css' %}">
+{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+    <a href="{% url 'admin:index' %}">{% trans 'Home' %}</a>
+    &rsaquo; <a href="{% url 'admin:app_list' app_label=opts.app_label %}">{{ opts.app_label|capfirst }}</a>
+    &rsaquo; <a href="{% url opts|admin_urlname:'changelist' %}">{{ opts.verbose_name_plural|capfirst }}</a>
+    &rsaquo; {{ title }}
+</div>
+{% endblock %}
+
+{% block content %}
+<div id="easypay-dashboard" class="easypay-dashboard">
+    <!-- Header with Date Range Selector -->
+    <div class="dashboard-header">
+        <h1>{{ title }}</h1>
+        <div class="date-range-selector">
+            <button type="button" data-range="month" {% if date_range == 'month' %}class="active"{% endif %}>
+                이번달
+            </button>
+            <button type="button" data-range="today" {% if date_range == 'today' %}class="active"{% endif %}>
+                오늘
+            </button>
+            <button type="button" data-range="7d" {% if date_range == '7d' %}class="active"{% endif %}>
+                7일
+            </button>
+            <button type="button" data-range="30d" {% if date_range == '30d' %}class="active"{% endif %}>
+                30일
+            </button>
+            <button type="button" data-range="90d" {% if date_range == '90d' %}class="active"{% endif %}>
+                90일
+            </button>
+            <button type="button" data-range="custom" id="customRangeBtn" {% if date_range == 'custom' %}class="active"{% endif %}>
+                직접선택
+            </button>
+        </div>
+    </div>
+
+    <!-- Custom Date Range Picker -->
+    <div id="customDatePicker" class="custom-date-picker" {% if date_range != 'custom' %}style="display: none;"{% endif %}>
+        <div class="date-picker-row">
+            <div class="date-input-group">
+                <label for="startDate">시작일</label>
+                <input type="date" id="startDate" value="{{ custom_start_date }}" max="{{ today }}">
+            </div>
+            <span class="date-separator">~</span>
+            <div class="date-input-group">
+                <label for="endDate">종료일</label>
+                <input type="date" id="endDate" value="{{ custom_end_date }}" max="{{ today }}">
+            </div>
+            <button type="button" id="applyDateRange" class="apply-btn">적용</button>
+            <button type="button" id="exportCsv" class="export-btn">CSV 다운로드</button>
+        </div>
+        <div class="calendar-container">
+            <div class="calendar-nav">
+                <button type="button" id="prevMonth">&lt;</button>
+                <span id="calendarMonth"></span>
+                <button type="button" id="nextMonth">&gt;</button>
+            </div>
+            <div class="calendar-grid" id="calendarGrid">
+                <div class="calendar-header">
+                    <span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span class="weekend">토</span><span class="weekend sunday">일</span>
+                </div>
+                <div class="calendar-days" id="calendarDays"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="summary-cards">
+        <div class="summary-card">
+            <div class="card-icon card-icon-revenue">💰</div>
+            <div class="card-content">
+                <span class="card-label">총 매출</span>
+                <span class="card-value" id="totalRevenue">{{ stats.summary.total_revenue.formatted }}</span>
+                {% if stats.summary.total_revenue.change is not None %}
+                <span class="card-change {{ stats.summary.total_revenue.trend }}">
+                    {% if stats.summary.total_revenue.trend == 'up' %}↑{% elif stats.summary.total_revenue.trend == 'down' %}↓{% endif %}
+                    {{ stats.summary.total_revenue.change }}%
+                </span>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="summary-card">
+            <div class="card-icon card-icon-count">📦</div>
+            <div class="card-content">
+                <span class="card-label">결제 건수</span>
+                <span class="card-value" id="transactionCount">{{ stats.summary.transaction_count.formatted }}</span>
+                {% if stats.summary.transaction_count.change is not None %}
+                <span class="card-change {{ stats.summary.transaction_count.trend }}">
+                    {% if stats.summary.transaction_count.trend == 'up' %}↑{% elif stats.summary.transaction_count.trend == 'down' %}↓{% endif %}
+                    {{ stats.summary.transaction_count.change }}%
+                </span>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="summary-card">
+            <div class="card-icon card-icon-average">📊</div>
+            <div class="card-content">
+                <span class="card-label">평균 결제금액</span>
+                <span class="card-value" id="averageValue">{{ stats.summary.average_value.formatted }}</span>
+                {% if stats.summary.average_value.change is not None %}
+                <span class="card-change {{ stats.summary.average_value.trend }}">
+                    {% if stats.summary.average_value.trend == 'up' %}↑{% elif stats.summary.average_value.trend == 'down' %}↓{% endif %}
+                    {{ stats.summary.average_value.change }}%
+                </span>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="summary-card">
+            <div class="card-icon card-icon-refund">🔄</div>
+            <div class="card-content">
+                <span class="card-label">환불/취소</span>
+                <span class="card-value" id="refundCount">{{ stats.summary.refund_count.formatted }}</span>
+                {% if stats.summary.refund_count.change is not None %}
+                <span class="card-change {{ stats.summary.refund_count.trend }}">
+                    {% if stats.summary.refund_count.trend == 'up' %}↑{% elif stats.summary.refund_count.trend == 'down' %}↓{% endif %}
+                    {{ stats.summary.refund_count.change }}%
+                </span>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Revenue Trend Chart -->
+    <div class="chart-container chart-main">
+        <h3>일별 매출 추이</h3>
+        <div class="chart-wrapper">
+            <canvas id="revenueTrendChart"></canvas>
+        </div>
+    </div>
+
+    <!-- Period Comparison Chart -->
+    <div class="chart-container chart-main">
+        <h3>기간 비교 (현재 vs 이전)</h3>
+        <p class="comparison-period-info">
+            현재: {{ stats.meta.start_date }} ~ {{ stats.meta.end_date }} |
+            이전: {{ stats.meta.prev_start_date }} ~ {{ stats.meta.prev_end_date }}
+        </p>
+        <div class="chart-wrapper">
+            <canvas id="comparisonChart"></canvas>
+        </div>
+    </div>
+
+    <!-- Breakdown Charts Row -->
+    <div class="chart-row">
+        <div class="chart-container chart-half">
+            <h3>상태별 분포</h3>
+            <div class="chart-wrapper chart-wrapper-small">
+                <canvas id="statusChart"></canvas>
+            </div>
+        </div>
+        <div class="chart-container chart-half">
+            <h3>결제수단별 매출</h3>
+            <div class="chart-wrapper chart-wrapper-small">
+                <canvas id="methodChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Back to list link -->
+    <div class="dashboard-footer">
+        <a href="{% url opts|admin_urlname:'changelist' %}" class="button">
+            ← 목록으로 돌아가기
+        </a>
+    </div>
+</div>
+
+<script src="{% static 'easypay/dashboard/dashboard.js' %}"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    EasyPayDashboard.init({
+        apiUrl: '{{ api_url }}',
+        initialRange: '{{ date_range }}',
+        chartData: {{ chart_data|safe }},
+        customStartDate: '{{ custom_start_date }}',
+        customEndDate: '{{ custom_end_date }}',
+        today: '{{ today }}',
+        exportUrl: 'export/'
+    });
+});
+</script>
+{% endblock %}

@@ -52,9 +52,9 @@ def mock_admin_request(request_factory, admin_user):
     request.user = admin_user
 
     # Add messages framework support for admin actions
-    setattr(request, "session", "session")
+    request.session = "session"
     messages_storage = FallbackStorage(request)
-    setattr(request, "_messages", messages_storage)
+    request._messages = messages_storage
 
     return request
 
@@ -118,7 +118,7 @@ class TestMixinConfiguration:
 
     def test_status_colors_format(self, model_admin):
         """Each color mapping should be a tuple of (text_color, bg_color)."""
-        for status, colors in model_admin.STATUS_COLORS.items():
+        for _status, colors in model_admin.STATUS_COLORS.items():
             assert isinstance(colors, tuple)
             assert len(colors) == 2
             # Check hex color format

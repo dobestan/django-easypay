@@ -5,6 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+- **Payment Dashboard**: 결제 분석 대시보드 (`PaymentDashboardMixin`)
+  - 요약 카드: 총 매출, 결제 건수, 평균 결제금액, 환불 건수
+  - 일별 매출 추이 라인 차트 (Chart.js)
+  - 상태별 분포 도넛 차트
+  - 결제수단별 매출 바 차트
+  - **기간 비교 차트**: 현재 vs 이전 기간 side-by-side 바 차트
+  - 날짜 필터: 이번달(기본값), 오늘, 7일, 30일, 90일, 직접선택
+  - **캘린더 날짜 선택기**: 월요일 시작, 주말 색상 구분 (토=파랑, 일=빨강)
+  - **CSV 내보내기**: 선택 기간 결제 데이터 다운로드
+  - JSON API 엔드포인트 (AJAX 업데이트용)
+  - 반응형 디자인 (모바일/태블릿 대응)
+  - 이전 기간 대비 변화율 표시
+  - 주말 매출 시각적 구분 (차트에서 토/일 색상 다르게 표시)
+
 ## [1.1.0] - 2024-12-29
 
 ### Changed

@@ -16,9 +16,10 @@ INSTALLED_APPS = [
     "django.contrib.admin",
     "django.contrib.sessions",
     "django.contrib.messages",
+    "rest_framework",
     "easypay",
-    "easypay.sandbox",  # Sandbox testing module
-    "tests",  # Contains concrete Payment model for testing
+    "easypay.sandbox",
+    "tests",
 ]
 
 DATABASES = {

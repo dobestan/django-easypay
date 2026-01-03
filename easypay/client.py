@@ -246,7 +246,7 @@ class EasyPayClient:
             raise EasyPayError(
                 message="API request timeout",
                 code="TIMEOUT",
-            )
+            ) from None
         except requests.exceptions.RequestException as e:
             logger.error(
                 "EasyPay API request failed",
@@ -255,7 +255,7 @@ class EasyPayClient:
             raise EasyPayError(
                 message=f"API request failed: {e}",
                 code="REQUEST_ERROR",
-            )
+            ) from e
 
     def register_payment(
         self,

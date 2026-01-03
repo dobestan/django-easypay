@@ -104,7 +104,7 @@ class PaymentAdminMixin:
     # =========================================================================
 
     @admin.display(description="상태")
-    def status_badge(self, obj: "AbstractPayment") -> str:
+    def status_badge(self, obj: AbstractPayment) -> str:
         """
         Display payment status as a colored badge.
 
@@ -131,12 +131,12 @@ class PaymentAdminMixin:
         )
 
     @admin.display(description="금액")
-    def amount_display(self, obj: "AbstractPayment") -> str:
+    def amount_display(self, obj: AbstractPayment) -> str:
         """Display amount with Korean Won formatting."""
         return f"{int(obj.amount):,}원"
 
     @admin.display(description="영수증")
-    def receipt_link(self, obj: "AbstractPayment") -> str:
+    def receipt_link(self, obj: AbstractPayment) -> str:
         """
         Display receipt link button in list view.
 
@@ -164,7 +164,7 @@ class PaymentAdminMixin:
     # =========================================================================
 
     @admin.display(description="영수증 보기")
-    def receipt_link_detail(self, obj: "AbstractPayment") -> str:
+    def receipt_link_detail(self, obj: AbstractPayment) -> str:
         """
         Display receipt link button in detail view.
 
@@ -188,7 +188,7 @@ class PaymentAdminMixin:
         return '<span style="color: #999;">결제 전</span>'
 
     @admin.display(description="PG 실시간 상태")
-    def pg_status_info(self, obj: "AbstractPayment") -> str:
+    def pg_status_info(self, obj: AbstractPayment) -> str:
         """
         Display real-time PG transaction status.
 

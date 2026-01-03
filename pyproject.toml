@@ -28,6 +28,9 @@ dependencies = [
     "requests>=2.28",
 ]
 
+[project.optional-dependencies]
+drf = ["djangorestframework>=3.15"]
+
 [project.urls]
 Homepage = "https://github.com/dobestan/django-easypay"
 Repository = "https://github.com/dobestan/django-easypay"
@@ -70,8 +73,14 @@ disallow_untyped_decorators = false
 [[tool.mypy.overrides]]
 module = [
     "requests.*",
+    "rest_framework.*",
 ]
 ignore_missing_imports = true
+
+# Dashboard modules (DRF optional, complex mixin patterns)
+[[tool.mypy.overrides]]
+module = ["easypay.dashboard.*"]
+disable_error_code = ["attr-defined", "misc", "assignment", "type-arg", "no-untyped-def", "no-untyped-call", "no-any-return", "unused-ignore"]
 
 # Admin modules can be less strict (Django admin typing is complex)
 [[tool.mypy.overrides]]
@@ -88,6 +97,7 @@ disable_error_code = ["no-untyped-def"]
 module = "tests.*"
 disallow_untyped_defs = false
 disallow_incomplete_defs = false
+disable_error_code = ["misc", "type-arg", "no-untyped-call"]
 
 [tool.django-stubs]
 django_settings_module = "tests.settings"
@@ -95,6 +105,7 @@ django_settings_module = "tests.settings"
 [dependency-groups]
 dev = [
     "django-stubs>=5.2.8",
+    "djangorestframework>=3.15",
     "freezegun>=1.2",
     "mypy>=1.19",
     "pytest>=9.0",
@@ -112,7 +123,7 @@ dev = [
 line-length = 100
 
 [tool.ruff.lint]
-select = ["E", "F", "W", "I", "UP", "TCH"]
+select = ["E", "F", "W", "I", "B", "C4", "UP"]
 ignore = ["E501"]  # Line length handled by formatter
 
 [tool.ruff.lint.per-file-ignores]

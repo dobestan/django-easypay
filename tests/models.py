@@ -50,7 +50,7 @@ class Payment(AbstractPayment):
         amount: int = 10000,
         status: str = "pending",
         **kwargs,
-    ) -> "Payment":
+    ) -> Payment:
         """
         Factory method for creating test payments.
 
