@@ -1,6 +1,6 @@
 [project]
 name = "django-easypay"
-version = "2026.1.3"
+version = "2026.1.3.1"
 description = "Django payment integration for EasyPay (KICC) PG"
 readme = "README.md"
 license = { text = "MIT" }
@@ -131,6 +131,6 @@ ignore = ["E501"]  # Line length handled by formatter
 
 [tool.commitizen]
 name = "cz_conventional_commits"
-version = "2026.1.3"
+version = "2026.1.3.1"
 version_files = ["pyproject.toml:^version"]
 tag_format = "v$version"
