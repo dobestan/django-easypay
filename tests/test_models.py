@@ -26,12 +26,11 @@ class TestPaymentStatus:
     """Tests for PaymentStatus TextChoices enum."""
 
     def test_status_values(self):
-        """Verify all expected status values exist."""
-        assert PaymentStatus.PENDING == "pending"
-        assert PaymentStatus.COMPLETED == "completed"
-        assert PaymentStatus.FAILED == "failed"
-        assert PaymentStatus.CANCELLED == "cancelled"
-        assert PaymentStatus.REFUNDED == "refunded"
+        assert PaymentStatus.PENDING.value == "pending"
+        assert PaymentStatus.COMPLETED.value == "completed"
+        assert PaymentStatus.FAILED.value == "failed"
+        assert PaymentStatus.CANCELLED.value == "cancelled"
+        assert PaymentStatus.REFUNDED.value == "refunded"
 
     def test_status_labels(self):
         """Verify Korean labels for each status."""
@@ -377,3 +376,74 @@ class TestConcretePaymentModel:
 
         payment.refresh_from_db()
         assert payment.description == "Integration test payment"
+
+
+# ============================================================
+# Tax Calculation Tests
+# ============================================================
+
+
+@pytest.mark.django_db
+class TestTaxCalculation:
+    def test_taxable_payment_auto_calculates_on_save(self, db):
+        from tests.models import Payment
+
+        payment = Payment.objects.create(amount=Decimal("2729292"))
+
+        assert payment.is_taxable is True
+        assert payment.supply_amount == Decimal("2481175")
+        assert payment.vat_amount == Decimal("248117")
+        assert payment.tax_free_amount == Decimal("0")
+
+    def test_tax_free_payment_all_goes_to_tax_free_amount(self, db):
+        from tests.models import Payment
+
+        payment = Payment.objects.create(amount=Decimal("100000"), is_taxable=False)
+
+        assert payment.supply_amount == Decimal("0")
+        assert payment.vat_amount == Decimal("0")
+        assert payment.tax_free_amount == Decimal("100000")
+
+    def test_manual_tax_fields_not_overwritten(self, db):
+        from tests.models import Payment
+
+        payment = Payment.objects.create(
+            amount=Decimal("100000"),
+            supply_amount=Decimal("80000"),
+            vat_amount=Decimal("20000"),
+        )
+
+        assert payment.supply_amount == Decimal("80000")
+        assert payment.vat_amount == Decimal("20000")
+
+    def test_calculate_tax_method_directly(self, db):
+        from tests.models import Payment
+
+        payment = Payment(amount=Decimal("29900"))
+        payment.calculate_tax()
+
+        assert payment.supply_amount == Decimal("27182")
+        assert payment.vat_amount == Decimal("2718")
+
+    def test_common_price_points(self, db):
+        from tests.models import Payment
+
+        test_cases = [
+            (Decimal("1000"), Decimal("909"), Decimal("91")),
+            (Decimal("10000"), Decimal("9091"), Decimal("909")),
+            (Decimal("29900"), Decimal("27182"), Decimal("2718")),
+            (Decimal("99000"), Decimal("90000"), Decimal("9000")),
+        ]
+
+        for amount, expected_supply, expected_vat in test_cases:
+            payment = Payment.objects.create(amount=amount)
+            assert payment.supply_amount == expected_supply, f"Failed for amount={amount}"
+            assert payment.vat_amount == expected_vat, f"Failed for amount={amount}"
+
+    def test_zero_amount_does_not_calculate(self, db):
+        from tests.models import Payment
+
+        payment = Payment.objects.create(amount=Decimal("0"))
+
+        assert payment.supply_amount == Decimal("0")
+        assert payment.vat_amount == Decimal("0")

@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import logging
 import uuid
+from decimal import ROUND_HALF_UP, Decimal
 from typing import Any
 
 from django.db import models
@@ -90,7 +91,35 @@ class AbstractPayment(models.Model):
         "결제금액",
         max_digits=10,
         decimal_places=0,
-        help_text="Payment amount in KRW",
+        help_text="Payment amount in KRW (total including tax)",
+    )
+
+    # Tax Information (Korean VAT: 10%)
+    supply_amount = models.DecimalField(
+        "공급가액",
+        max_digits=10,
+        decimal_places=0,
+        default=0,
+        help_text="Supply amount excluding VAT",
+    )
+    vat_amount = models.DecimalField(
+        "부가세액",
+        max_digits=10,
+        decimal_places=0,
+        default=0,
+        help_text="VAT amount (10% of supply_amount for taxable)",
+    )
+    tax_free_amount = models.DecimalField(
+        "면세금액",
+        max_digits=10,
+        decimal_places=0,
+        default=0,
+        help_text="Tax-free amount",
+    )
+    is_taxable = models.BooleanField(
+        "과세 여부",
+        default=True,
+        help_text="True for taxable, False for tax-free transactions",
     )
 
     # Payment Status
@@ -161,10 +190,39 @@ class AbstractPayment(models.Model):
         return f"Payment {self.pk} - {self.get_status_display()} ({self.amount:,.0f}원)"
 
     def save(self, *args: Any, **kwargs: Any) -> None:
-        """Auto-generate hash_id if not set."""
         if not self.hash_id:
             self.hash_id = uuid.uuid4().hex[:12]
+
+        if self._should_calculate_tax():
+            self.calculate_tax()
+
         super().save(*args, **kwargs)
+
+    def _should_calculate_tax(self) -> bool:
+        """Check if tax should be auto-calculated."""
+        if not self.amount:
+            return False
+        if self.supply_amount and self.vat_amount:
+            return False
+        return True
+
+    def calculate_tax(self) -> None:
+        """Calculate supply_amount and vat_amount from total amount (Korean VAT 10%)."""
+        if not self.amount:
+            return
+
+        amount = Decimal(str(self.amount))
+
+        if self.is_taxable:
+            self.supply_amount = (amount / Decimal("1.1")).quantize(
+                Decimal("1"), rounding=ROUND_HALF_UP
+            )
+            self.vat_amount = amount - self.supply_amount
+            self.tax_free_amount = Decimal("0")
+        else:
+            self.supply_amount = Decimal("0")
+            self.vat_amount = Decimal("0")
+            self.tax_free_amount = amount
 
     @property
     def is_paid(self) -> bool:

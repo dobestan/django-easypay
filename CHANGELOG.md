@@ -8,6 +8,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Tax Fields (공급가액/부가세액)**: Korean VAT 10% 세금 계산 지원
+  - `supply_amount`, `vat_amount`, `tax_free_amount`, `is_taxable` 필드 추가
+  - `calculate_tax()` 메서드: 총액에서 공급가액/부가세 자동 계산
+  - `save()` 시 세금 필드가 설정되지 않은 경우 자동 계산
+  - `register_payment()` API에 `taxInfo` 파라미터 자동 포함
+  - Admin에 세금 내역 표시 (`tax_breakdown`)
+
 - **Payment Dashboard**: 결제 분석 대시보드 (`PaymentDashboardMixin`)
   - 요약 카드: 총 매출, 결제 건수, 평균 결제금액, 환불 건수
   - 일별 매출 추이 라인 차트 (Chart.js)

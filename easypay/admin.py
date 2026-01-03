@@ -81,6 +81,7 @@ class PaymentAdminMixin:
         "client_user_agent",
         "receipt_link_detail",
         "pg_status_info",
+        "tax_breakdown",
     ]
 
     # === Admin Actions ===
@@ -134,6 +135,35 @@ class PaymentAdminMixin:
     def amount_display(self, obj: AbstractPayment) -> str:
         """Display amount with Korean Won formatting."""
         return f"{int(obj.amount):,}원"
+
+    @admin.display(description="세금 내역")
+    def tax_breakdown(self, obj: AbstractPayment) -> str:
+        """Display tax breakdown (supply amount, VAT, tax-free)."""
+        supply = getattr(obj, "supply_amount", None)
+        vat = getattr(obj, "vat_amount", None)
+        tax_free = getattr(obj, "tax_free_amount", None)
+        is_taxable = getattr(obj, "is_taxable", True)
+
+        if supply is None or vat is None:
+            return "-"
+
+        if is_taxable:
+            return format_html(
+                '<div style="line-height: 1.6;">'
+                "<strong>과세</strong><br>"
+                "공급가액: {:,}원<br>"
+                "부가세액: {:,}원<br>"
+                "합계: {:,}원"
+                "</div>",
+                int(supply),
+                int(vat),
+                int(obj.amount),
+            )
+        else:
+            return format_html(
+                '<div style="line-height: 1.6;"><strong>면세</strong><br>면세금액: {:,}원</div>',
+                int(tax_free or obj.amount),
+            )
 
     @admin.display(description="영수증")
     def receipt_link(self, obj: AbstractPayment) -> str:

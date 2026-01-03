@@ -68,6 +68,14 @@ class CardInfo(TypedDict, total=False):
     approvalNo: str
 
 
+class TaxInfo(TypedDict, total=False):
+    """Tax information for composite taxation."""
+
+    taxAmount: int
+    freeAmount: int
+    vatAmount: int
+
+
 class PaymentInfo(TypedDict, total=False):
     """Payment information from EasyPay approval response."""
 
@@ -291,29 +299,40 @@ class EasyPayClient:
         # Get order identifier (hash_id, order_id, or pk)
         order_id = self._get_order_id(payment)
 
-        payload = {
+        payload: dict[str, Any] = {
             "mallId": self.mall_id,
             "shopOrderNo": order_id,
             "amount": int(payment.amount),
             "payMethodTypeCode": pay_method_type_code,
-            "currency": "00",  # KRW
+            "currency": "00",
             "clientTypeCode": "00",
             "deviceTypeCode": device_type_code,
             "returnUrl": return_url,
             "orderInfo": {
-                "goodsName": goods_name[:80],  # Max 80 bytes
+                "goodsName": goods_name[:80],
                 "customerInfo": {
                     "customerName": customer_name or order_id[-4:],
                 },
             },
         }
 
+        supply_amount = getattr(payment, "supply_amount", None)
+        vat_amount = getattr(payment, "vat_amount", None)
+        tax_free_amount = getattr(payment, "tax_free_amount", None) or 0
+
+        if supply_amount is not None and vat_amount is not None:
+            payload["taxInfo"] = {
+                "taxAmount": int(supply_amount) + int(vat_amount),
+                "freeAmount": int(tax_free_amount),
+                "vatAmount": int(vat_amount),
+            }
+
         try:
             result = self._request(self.ENDPOINT_REGISTER, payload)
 
-            # Audit log: payment registration success
             logger.info(
-                "Payment registered with EasyPay",
+                "Payment %s registered with EasyPay",
+                payment.pk,
                 extra={
                     "payment_id": payment.pk,
                     "order_id": order_id,
