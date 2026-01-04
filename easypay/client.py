@@ -316,14 +316,21 @@ class EasyPayClient:
             },
         }
 
-        supply_amount = getattr(payment, "supply_amount", None)
-        vat_amount = getattr(payment, "vat_amount", None)
+        # Tax information (taxInfo) is OPTIONAL
+        # Only include for composite taxation (복합과세) - mix of taxable + tax-free items
+        # For simple taxable payments, EasyPay auto-calculates using merchant settings
         tax_free_amount = getattr(payment, "tax_free_amount", None) or 0
 
-        if supply_amount is not None and vat_amount is not None:
+        # Only send taxInfo when there's a tax-free portion (composite taxation)
+        if tax_free_amount and int(tax_free_amount) > 0:
+            supply_amount = getattr(payment, "supply_amount", None) or 0
+            vat_amount = getattr(payment, "vat_amount", None) or 0
+            tax_amount = int(supply_amount) + int(vat_amount)
+            free_amount = int(tax_free_amount)
+
             payload["taxInfo"] = {
-                "taxAmount": int(supply_amount) + int(vat_amount),
-                "freeAmount": int(tax_free_amount),
+                "taxAmount": tax_amount,
+                "freeAmount": free_amount,
                 "vatAmount": int(vat_amount),
             }
 
