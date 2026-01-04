@@ -805,3 +805,37 @@
 
 /* Additional text colors for calendar */
 #easypay-dashboard .text-rose-600 { color: #e11d48; }
+
+/* Calendar-specific utilities */
+#easypay-dashboard .min-h-\[100px\] { min-height: 100px; }
+#easypay-dashboard .min-w-\[140px\] { min-width: 140px; }
+#easypay-dashboard .w-1\.5 { width: 0.375rem; }
+#easypay-dashboard .h-1\.5 { height: 0.375rem; }
+#easypay-dashboard .w-2 { width: 0.5rem; }
+#easypay-dashboard .h-2 { height: 0.5rem; }
+#easypay-dashboard .w-5 { width: 1.25rem; }
+#easypay-dashboard .h-5 { height: 1.25rem; }
+#easypay-dashboard .gap-1 { gap: 0.25rem; }
+#easypay-dashboard .ml-2 { margin-left: 0.5rem; }
+#easypay-dashboard .py-1\.5 { padding-top: 0.375rem; padding-bottom: 0.375rem; }
+#easypay-dashboard .py-3 { padding-top: 0.75rem; padding-bottom: 0.75rem; }
+#easypay-dashboard .space-y-0\.5 > * + * { margin-top: 0.125rem; }
+#easypay-dashboard .transition-colors { transition-property: color, background-color, border-color; transition-duration: 150ms; }
+#easypay-dashboard .ring-2 { box-shadow: 0 0 0 2px var(--ring-color, #4f46e5); }
+#easypay-dashboard .ring-inset { --ring-inset: inset; box-shadow: var(--ring-inset) 0 0 0 2px var(--ring-color, #4f46e5); }
+#easypay-dashboard .ring-indigo-500 { --ring-color: #6366f1; }
+#easypay-dashboard .border-indigo-300 { border-color: #a5b4fc; }
+#easypay-dashboard .border-indigo-600 { border-color: #4f46e5; }
+#easypay-dashboard .hover\:bg-indigo-50:hover { background-color: #eef2ff; }
+#easypay-dashboard .hover\:bg-gray-100:hover { background-color: #f3f4f6; }
+#easypay-dashboard .bg-emerald-500 { background-color: #10b981; }
+#easypay-dashboard .divide-x > * + * { border-left-width: 1px; border-left-style: solid; }
+#easypay-dashboard .divide-y > * + * { border-top-width: 1px; border-top-style: solid; }
+#easypay-dashboard .divide-gray-200 > * + * { border-color: #e5e7eb; }
+#easypay-dashboard .bg-gray-200 { background-color: #e5e7eb; }
+
+/* Calendar cell responsive adjustments */
+@media (max-width: 768px) {
+    #easypay-dashboard .min-h-\[100px\] { min-height: 70px; }
+    #easypay-dashboard #calendarGrid .text-xs { font-size: 0.65rem; }
+}
