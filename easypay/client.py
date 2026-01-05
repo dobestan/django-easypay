@@ -245,7 +245,6 @@ class EasyPayClient:
                 extra={
                     "endpoint": endpoint,
                     "res_cd": data.get("resCd"),
-                    "response_data": data,
                 },
             )
             return dict(data)
@@ -413,29 +412,13 @@ class EasyPayClient:
         try:
             result = self._request(self.ENDPOINT_APPROVE, payload)
 
-            # Debug: log full response structure (temporarily for debugging)
-            logger.info(
-                "EasyPay approval response received",
-                extra={
-                    "payment_id": payment.pk,
-                    "order_id": order_id,
-                    "response_keys": list(result.keys()),
-                    "has_pgTid": "pgTid" in result,
-                    "has_paymentInfo": "paymentInfo" in result,
-                    "pgTid_value": result.get("pgTid", "NOT_FOUND"),
-                },
-            )
-
-            # Extract payment info for logging (avoid logging sensitive data)
-            pg_tid = result.get("pgTid", "")
+            pg_tid = result.get("pgTid") or result.get("pgCno") or ""
             payment_info = result.get("paymentInfo", {})
             pay_method_type_code = payment_info.get("payMethodTypeCode", "")
             card_info = payment_info.get("cardInfo", {})
-            card_name = card_info.get("cardName", "")
+            card_name = card_info.get("cardName") or card_info.get("issuerName") or ""
 
-            # Verify approved amount matches expected amount
-            # This prevents potential price manipulation attacks
-            approved_amount = int(payment_info.get("approvalAmount", 0))
+            approved_amount = int(payment_info.get("approvalAmount") or result.get("amount") or 0)
             expected_amount = int(payment.amount)
 
             if approved_amount != expected_amount:
