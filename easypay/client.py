@@ -447,6 +447,7 @@ class EasyPayClient:
             pay_method_type_code = payment_info.get("payMethodTypeCode", "")
             card_info = payment_info.get("cardInfo", {})
             card_name = card_info.get("cardName") or card_info.get("issuerName") or ""
+            card_no = card_info.get("cardNo", "")
 
             approved_amount = int(payment_info.get("approvalAmount") or result.get("amount") or 0)
             expected_amount = int(payment.amount)
@@ -462,11 +463,7 @@ class EasyPayClient:
                         "pg_tid": pg_tid,
                     },
                 )
-                # Note: We still return the result and log the discrepancy
-                # The calling code should decide how to handle this
-                # In production, you may want to raise an error here
 
-            # Audit log: payment approval success
             logger.info(
                 "Payment approved by EasyPay",
                 extra={
@@ -476,11 +473,9 @@ class EasyPayClient:
                     "pg_tid": pg_tid,
                     "pay_method_type_code": pay_method_type_code,
                     "card_name": card_name,
-                    # Note: card_no and authorization_id are intentionally excluded (sensitive)
                 },
             )
 
-            # Fire signal with approval data
             from .signals import payment_approved
 
             payment_approved.send(
@@ -490,9 +485,14 @@ class EasyPayClient:
                     "pg_tid": pg_tid,
                     "pay_method_type_code": pay_method_type_code,
                     "card_name": card_name,
-                    "card_no": card_info.get("cardNo", ""),
+                    "card_no": card_no,
                 },
             )
+
+            result["pg_tid"] = pg_tid
+            result["pay_method_type_code"] = pay_method_type_code
+            result["card_name"] = card_name
+            result["card_no"] = card_no
 
             return result
         except EasyPayError as e:
