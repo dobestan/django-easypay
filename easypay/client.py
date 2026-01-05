@@ -412,6 +412,19 @@ class EasyPayClient:
         try:
             result = self._request(self.ENDPOINT_APPROVE, payload)
 
+            # Debug: log full response structure (temporarily for debugging)
+            logger.info(
+                "EasyPay approval response received",
+                extra={
+                    "payment_id": payment.pk,
+                    "order_id": order_id,
+                    "response_keys": list(result.keys()),
+                    "has_pgTid": "pgTid" in result,
+                    "has_paymentInfo": "paymentInfo" in result,
+                    "pgTid_value": result.get("pgTid", "NOT_FOUND"),
+                },
+            )
+
             # Extract payment info for logging (avoid logging sensitive data)
             pg_tid = result.get("pgTid", "")
             payment_info = result.get("paymentInfo", {})
