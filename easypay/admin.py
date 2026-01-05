@@ -287,8 +287,7 @@ class PaymentAdminMixin:
         cancelled = 0
         errors = []
 
-        # Filter to only completed payments with pg_tid
-        eligible = queryset.filter(status=PaymentStatus.COMPLETED, pg_tid__isnull=False)
+        eligible = queryset.filter(status=PaymentStatus.COMPLETED).exclude(pg_tid__in=["", None])
 
         for payment in eligible:
             logger.info(

@@ -254,14 +254,17 @@ class EasyPayClient:
             response.raise_for_status()
             data = response.json()
 
-            # Check EasyPay response code
             if data.get("resCd") != "0000":
+                safe_payload = {
+                    k: v for k, v in payload.items() if k not in ("msgAuthValue", "authorizationId")
+                }
                 logger.error(
                     "EasyPay API error",
                     extra={
                         "endpoint": endpoint,
                         "res_cd": data.get("resCd"),
                         "res_msg": data.get("resMsg"),
+                        "request_payload": safe_payload,
                     },
                 )
                 raise EasyPayError(
@@ -588,7 +591,7 @@ class EasyPayClient:
                 "shopOrderNo": order_id,
                 "pgCno": payment.pg_tid,
                 "reviseTypeCode": cancel_type_code,
-                "cancelReqDate": datetime.now().strftime("%Y%m%d"),
+                "reviseReqDate": datetime.now().strftime("%Y%m%d"),
                 "msgAuthValue": msg_auth_value,
             }
             if cancel_type_code == "41":

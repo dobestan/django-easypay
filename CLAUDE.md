@@ -108,10 +108,12 @@ EASYPAY_SECRET_KEY = env("EASYPAY_SECRET_KEY")  # HMAC 암복호화 키 (영업�
 EasyPay는 테스트/운영 환경에서 **다른 API 엔드포인트와 필드명**을 사용함.
 
 **취소 API:**
-- 테스트: `/api/ep9/trades/cancel` + `pgTid`, `cancelTypeCode`, `cancelReason`
-- 운영: `/api/trades/revise` + `pgCno`, `reviseTypeCode`, `reviseMessage`, `msgAuthValue`
+- 테스트: `/api/ep9/trades/cancel`
+  - `pgTid`, `cancelTypeCode`, `cancelAmount`, `cancelReason`, `cancelReqDate`
+- 운영: `/api/trades/revise`
+  - `pgCno`, `reviseTypeCode`, `reviseAmount`, `reviseMessage`, `reviseReqDate`, `msgAuthValue`
 
-**중요:** 운영 환경에서도 `cancelReqDate` 필드명을 사용해야 함 (문서와 다름).
+**중요:** 운영 API는 모든 필드가 `revise` prefix를 사용함 (`cancelReqDate` → `reviseReqDate`).
 
 ### 2. HMAC SHA256 인증 (운영 환경 필수)
 
