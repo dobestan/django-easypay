@@ -82,10 +82,67 @@ class Payment(AbstractPayment):
 ```python
 INSTALLED_APPS = ["easypay"]
 
-# EasyPay 설정 (기본값: 테스트 MID)
+# 테스트 환경 (기본값)
 EASYPAY_MALL_ID = "T0021792"
 EASYPAY_API_URL = "https://testpgapi.easypay.co.kr"
+
+# 운영 환경
+EASYPAY_MALL_ID = env("EASYPAY_MALL_ID")  # 실 가맹점 ID
+EASYPAY_API_URL = "https://pgapi.easypay.co.kr"
+EASYPAY_SECRET_KEY = env("EASYPAY_SECRET_KEY")  # HMAC 암복호화 키 (영업담당자 제공)
 ```
+
+## 환경별 API 동작
+
+| 환경 | 취소 API | 조회 API | HMAC 인증 |
+|-----|---------|---------|----------|
+| 테스트 (`testpgapi`) | `/api/ep9/trades/cancel` | `/api/ep9/trades/status` | 불필요 |
+| 운영 (`pgapi`) | `/api/trades/revise` | `/api/trades/retrieveTransaction` | 필수 |
+
+환경은 `EASYPAY_API_URL`로 자동 감지됨 (`is_test_mode` 프로퍼티).
+
+## Lessons Learned (2026-01-05)
+
+### 1. 테스트 환경과 운영 환경의 API 차이
+
+EasyPay는 테스트/운영 환경에서 **다른 API 엔드포인트와 필드명**을 사용함.
+
+**취소 API:**
+- 테스트: `/api/ep9/trades/cancel` + `pgTid`, `cancelTypeCode`, `cancelReason`
+- 운영: `/api/trades/revise` + `pgCno`, `reviseTypeCode`, `reviseMessage`, `msgAuthValue`
+
+**중요:** 운영 환경에서도 `cancelReqDate` 필드명을 사용해야 함 (문서와 다름).
+
+### 2. HMAC SHA256 인증 (운영 환경 필수)
+
+```python
+# msgAuthValue 생성
+data = f"{pg_tid}|{shop_transaction_id}"
+msg_auth_value = hmac.new(
+    secret_key.encode(),
+    data.encode(),
+    hashlib.sha256
+).hexdigest()
+```
+
+### 3. 응답 필드명 차이
+
+| 필드 | 테스트 환경 | 운영 환경 |
+|-----|------------|----------|
+| PG 거래 ID | `pgTid` | `pgCno` |
+| 카드명 | `cardName` | `issuerName` |
+| 승인 금액 | `paymentInfo.approvalAmount` | `amount` (루트) |
+
+### 4. 영수증 URL
+
+영수증 URL은 `pgCno` (운영 PG 거래번호)를 사용:
+- 테스트: `https://testpgweb.easypay.co.kr/receipt/card?pgTid={pgCno}`
+- 운영: `https://pgweb.easypay.co.kr/receipt/card?pgTid={pgCno}`
+
+### 5. 프로젝트별 Secret Key
+
+각 프로젝트(가맹점)마다 별도의 `EASYPAY_SECRET_KEY`가 필요함.
+영업담당자에게 요청하여 발급받아야 함.
 
 ## 테스트
 
