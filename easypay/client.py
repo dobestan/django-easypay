@@ -31,6 +31,8 @@ Usage:
 
 from __future__ import annotations
 
+import hashlib
+import hmac
 import logging
 import uuid
 from datetime import datetime
@@ -144,11 +146,17 @@ class EasyPayClient:
         timeout: Request timeout in seconds (default: 30)
     """
 
-    # API Endpoints
+    # API Endpoints (common)
     ENDPOINT_REGISTER = "/api/ep9/trades/webpay"
     ENDPOINT_APPROVE = "/api/ep9/trades/approval"
-    ENDPOINT_CANCEL = "/api/ep9/trades/cancel"
-    ENDPOINT_STATUS = "/api/ep9/trades/status"
+
+    # Legacy endpoints (test environment)
+    ENDPOINT_CANCEL_LEGACY = "/api/ep9/trades/cancel"
+    ENDPOINT_STATUS_LEGACY = "/api/ep9/trades/status"
+
+    # Production endpoints (new API)
+    ENDPOINT_CANCEL_PROD = "/api/trades/revise"
+    ENDPOINT_STATUS_PROD = "/api/trades/retrieveTransaction"
 
     # Receipt URL templates
     RECEIPT_URL_PROD = "https://pgweb.easypay.co.kr/receipt/card?pgTid={pg_tid}"
@@ -183,11 +191,33 @@ class EasyPayClient:
             if api_url is not None
             else getattr(settings, "EASYPAY_API_URL", "https://testpgapi.easypay.co.kr")
         )
+        self.secret_key: str = getattr(settings, "EASYPAY_SECRET_KEY", "easypay!KICCTEST")
         self.timeout = timeout
 
-        # Validate configuration (also catches empty from settings)
         if not self.mall_id:
             raise ConfigurationError("EASYPAY_MALL_ID is not configured")
+
+    @property
+    def is_test_mode(self) -> bool:
+        return "testpgapi" in self.api_url
+
+    def _generate_msg_auth_value(self, data: str) -> str:
+        """
+        Generate HMAC SHA256 message authentication value.
+
+        Required for cancel/revise API calls in production environment.
+
+        Args:
+            data: Data string to hash (e.g., "pgCno|shopTransactionId")
+
+        Returns:
+            HMAC SHA256 hash as hexadecimal string
+        """
+        return hmac.new(
+            self.secret_key.encode("utf-8"),
+            data.encode("utf-8"),
+            hashlib.sha256,
+        ).hexdigest()
 
     def _request(self, endpoint: str, payload: dict[str, Any]) -> dict[str, Any]:
         """
@@ -504,9 +534,12 @@ class EasyPayClient:
         """
         Cancel or refund a completed payment.
 
+        Test environment uses legacy /api/ep9/trades/cancel endpoint.
+        Production uses /api/trades/revise with HMAC SHA256 authentication.
+
         Args:
             payment: Payment instance (must have pg_tid)
-            cancel_type_code: EasyPay cancelTypeCode - "40" for full cancel, "41" for partial
+            cancel_type_code: "40" for full cancel, "41" for partial
             cancel_amount: Amount to cancel (required for partial cancel)
             cancel_reason: Optional reason for cancellation
 
@@ -524,27 +557,45 @@ class EasyPayClient:
 
         order_id = self._get_order_id(payment)
 
-        payload = {
-            "mallId": self.mall_id,
-            "shopOrderNo": order_id,
-            "pgTid": payment.pg_tid,
-            "cancelReqDate": datetime.now().strftime("%Y%m%d"),
-            "cancelTypeCode": cancel_type_code,
-        }
+        if cancel_type_code == "41" and not cancel_amount:
+            raise PaymentCancellationError(
+                message="Cancel amount required for partial cancellation",
+                code="NO_CANCEL_AMOUNT",
+            )
 
-        # Partial cancel requires amount
-        if cancel_type_code == "41":
-            if not cancel_amount:
-                raise PaymentCancellationError(
-                    message="Cancel amount required for partial cancellation",
-                    code="NO_CANCEL_AMOUNT",
-                )
-            payload["cancelAmount"] = cancel_amount
+        if self.is_test_mode:
+            endpoint = self.ENDPOINT_CANCEL_LEGACY
+            payload: dict[str, Any] = {
+                "mallId": self.mall_id,
+                "shopOrderNo": order_id,
+                "pgTid": payment.pg_tid,
+                "cancelReqDate": datetime.now().strftime("%Y%m%d"),
+                "cancelTypeCode": cancel_type_code,
+            }
+            if cancel_type_code == "41":
+                payload["cancelAmount"] = cancel_amount
+            if cancel_reason:
+                payload["cancelReason"] = cancel_reason[:100]
+        else:
+            endpoint = self.ENDPOINT_CANCEL_PROD
+            shop_transaction_id = uuid.uuid4().hex[:32]
+            msg_auth_data = f"{payment.pg_tid}|{shop_transaction_id}"
+            msg_auth_value = self._generate_msg_auth_value(msg_auth_data)
 
-        if cancel_reason:
-            payload["cancelReason"] = cancel_reason[:100]
+            payload = {
+                "mallId": self.mall_id,
+                "shopTransactionId": shop_transaction_id,
+                "shopOrderNo": order_id,
+                "pgCno": payment.pg_tid,
+                "reviseTypeCode": cancel_type_code,
+                "reviseReqDate": datetime.now().strftime("%Y%m%d"),
+                "msgAuthValue": msg_auth_value,
+            }
+            if cancel_type_code == "41":
+                payload["reviseAmount"] = cancel_amount
+            if cancel_reason:
+                payload["reviseMessage"] = cancel_reason[:100]
 
-        # Audit log: cancellation initiated (warning level - significant operation)
         effective_cancel_amount = cancel_amount or int(payment.amount)
         logger.warning(
             "Payment cancellation initiated",
@@ -555,14 +606,13 @@ class EasyPayClient:
                 "cancel_type_code": cancel_type_code,
                 "cancel_amount": effective_cancel_amount,
                 "original_amount": int(payment.amount),
-                "cancel_reason": cancel_reason[:50] if cancel_reason else "",
+                "is_test_mode": self.is_test_mode,
             },
         )
 
         try:
-            result = self._request(self.ENDPOINT_CANCEL, payload)
+            result = self._request(endpoint, payload)
 
-            # Audit log: cancellation success
             logger.info(
                 "Payment cancelled successfully",
                 extra={
@@ -573,7 +623,6 @@ class EasyPayClient:
                 },
             )
 
-            # Fire signal
             from .signals import payment_cancelled
 
             payment_cancelled.send(
@@ -586,7 +635,6 @@ class EasyPayClient:
 
             return result
         except EasyPayError as e:
-            # Audit log: cancellation failure
             logger.error(
                 "Payment cancellation failed",
                 extra={
@@ -611,21 +659,15 @@ class EasyPayClient:
         """
         Query transaction status from PG.
 
-        Useful for:
-        - Verifying payment status
-        - Getting receipt information
-        - Checking cancellation status
+        Test environment uses legacy /api/ep9/trades/status endpoint.
+        Production uses /api/trades/retrieveTransaction.
 
         Args:
             payment: Payment instance
             transaction_date: Transaction date (YYYYMMDD), defaults to payment creation date
 
         Returns:
-            dict containing:
-                - payStatusNm: Payment status name
-                - cancelYn: Cancellation status ("Y" or "N")
-                - approvalDt: Approval datetime
-                - and other response fields
+            dict containing transaction status information
 
         Raises:
             PaymentInquiryError: On inquiry failure
@@ -633,20 +675,29 @@ class EasyPayClient:
         order_id = self._get_order_id(payment)
 
         if not transaction_date:
-            # Use payment creation date
             created_at = getattr(payment, "created_at", None)
             if created_at:
                 transaction_date = created_at.strftime("%Y%m%d")
             else:
                 transaction_date = datetime.now().strftime("%Y%m%d")
 
-        payload = {
-            "mallId": self.mall_id,
-            "shopOrderNo": order_id,
-            "transactionDate": transaction_date,
-        }
+        if self.is_test_mode:
+            endpoint = self.ENDPOINT_STATUS_LEGACY
+            payload: dict[str, Any] = {
+                "mallId": self.mall_id,
+                "shopOrderNo": order_id,
+                "transactionDate": transaction_date,
+            }
+        else:
+            endpoint = self.ENDPOINT_STATUS_PROD
+            shop_transaction_id = uuid.uuid4().hex[:32]
+            payload = {
+                "mallId": self.mall_id,
+                "shopTransactionId": shop_transaction_id,
+                "shopOrderNo": order_id,
+                "transactionDate": transaction_date,
+            }
 
-        # Debug log: status inquiry (frequent operation, debug level)
         logger.debug(
             "Querying transaction status",
             extra={
@@ -654,11 +705,12 @@ class EasyPayClient:
                 "order_id": order_id,
                 "pg_tid": payment.pg_tid,
                 "transaction_date": transaction_date,
+                "is_test_mode": self.is_test_mode,
             },
         )
 
         try:
-            result = self._request(self.ENDPOINT_STATUS, payload)
+            result = self._request(endpoint, payload)
 
             logger.debug(
                 "Transaction status received",

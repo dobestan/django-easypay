@@ -41,9 +41,15 @@ INSTALLED_APPS = [
     'easypay',
 ]
 
-# EasyPay 설정 (선택 - 기본값: 테스트 MID)
+# EasyPay 설정 (선택 - 기본값: 테스트 환경)
 EASYPAY_MALL_ID = "T0021792"  # 테스트 MID (기본값)
 EASYPAY_API_URL = "https://testpgapi.easypay.co.kr"  # 테스트 URL (기본값)
+EASYPAY_SECRET_KEY = "easypay!KICCTEST"  # 테스트 Secret Key (기본값)
+
+# 운영 환경 설정 예시
+# EASYPAY_MALL_ID = "05593961"
+# EASYPAY_API_URL = "https://pgapi.easypay.co.kr"
+# EASYPAY_SECRET_KEY = "운영 Secret Key (영업담당자 제공)"
 ```
 
 ### 2. Payment 모델 생성
@@ -333,6 +339,19 @@ logger.info(f"Full response: {api_response}")  # 전체 응답
 | **결제 통계** | 일별/주별/월별 매출 통계 대시보드 |
 | **일괄 취소** | 선택한 결제 건 일괄 취소 |
 | **CSV 내보내기** | 결제 내역 CSV 다운로드 (카드번호 마스킹) |
+
+## Environment-Aware API
+
+테스트 환경과 운영 환경에서 다른 EasyPay API 엔드포인트를 자동으로 사용합니다.
+
+| API | 테스트 환경 | 운영 환경 |
+|-----|------------|----------|
+| 취소 | `/api/ep9/trades/cancel` | `/api/trades/revise` |
+| 조회 | `/api/ep9/trades/status` | `/api/trades/retrieveTransaction` |
+
+환경은 `EASYPAY_API_URL`로 자동 감지됩니다:
+- `testpgapi.easypay.co.kr` → 테스트 모드 (레거시 API)
+- `pgapi.easypay.co.kr` → 운영 모드 (새 API + HMAC 인증)
 
 ## Requirements
 
