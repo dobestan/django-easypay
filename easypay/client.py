@@ -585,13 +585,15 @@ class EasyPayClient:
             msg_auth_data = f"{payment.pg_tid}|{shop_transaction_id}"
             msg_auth_value = self._generate_msg_auth_value(msg_auth_data)
 
+            req_date = datetime.now().strftime("%Y%m%d")
             payload = {
                 "mallId": self.mall_id,
                 "shopTransactionId": shop_transaction_id,
                 "shopOrderNo": order_id,
                 "pgCno": payment.pg_tid,
                 "reviseTypeCode": cancel_type_code,
-                "reviseReqDate": datetime.now().strftime("%Y%m%d"),
+                "reviseReqDate": req_date,
+                "cancelReqDate": req_date,
                 "msgAuthValue": msg_auth_value,
             }
             if cancel_type_code == "41":
