@@ -245,6 +245,7 @@ class EasyPayClient:
                 extra={
                     "endpoint": endpoint,
                     "res_cd": data.get("resCd"),
+                    "response_data": data,
                 },
             )
             return dict(data)
