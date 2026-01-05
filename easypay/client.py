@@ -588,7 +588,7 @@ class EasyPayClient:
                 "shopOrderNo": order_id,
                 "pgCno": payment.pg_tid,
                 "reviseTypeCode": cancel_type_code,
-                "reviseReqDate": datetime.now().strftime("%Y%m%d"),
+                "cancelReqDate": datetime.now().strftime("%Y%m%d"),
                 "msgAuthValue": msg_auth_value,
             }
             if cancel_type_code == "41":
