@@ -35,6 +35,25 @@ class PaymentStatus(models.TextChoices):
     REFUNDED = "refunded", "환불"
 
 
+PAY_METHOD_TYPE_CODES: dict[str, str] = {
+    "11": "신용카드",
+    "21": "계좌이체",
+    "22": "가상계좌",
+    "31": "휴대폰",
+    "41": "선불결제",
+    "42": "도서상품권",
+    "43": "컬처상품권",
+    "44": "스마트문화상품권",
+    "45": "해피머니",
+    "46": "틴캐시",
+    "50": "간편결제",
+}
+
+
+def get_pay_method_display(code: str) -> str:
+    return PAY_METHOD_TYPE_CODES.get(code, f"기타({code})" if code else "")
+
+
 class AbstractPayment(models.Model):
     """
     Abstract base model for EasyPay payment integration.
@@ -243,6 +262,9 @@ class AbstractPayment(models.Model):
     def can_cancel(self) -> bool:
         """Check if payment can be cancelled."""
         return self.status == PaymentStatus.COMPLETED and bool(self.pg_tid)
+
+    def get_pay_method_type_display(self) -> str:
+        return get_pay_method_display(self.pay_method_type_code)
 
     def mark_as_paid(
         self, pg_tid: str = "", authorization_id: str = "", **extra_fields: Any
