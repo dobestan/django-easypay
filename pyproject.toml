@@ -111,6 +111,7 @@ dev = [
     "pytest>=9.0",
     "pytest-django>=4.11",
     "responses>=0.23",
+    "poethepoet>=0.32.0",
     "ruff>=0.14",
     "types-requests>=2.32",
 ]
@@ -123,14 +124,36 @@ dev = [
 line-length = 100
 
 [tool.ruff.lint]
-select = ["E", "F", "W", "I", "B", "C4", "UP"]
-ignore = ["E501"]  # Line length handled by formatter
+select = ["E", "F", "W", "I", "B", "C4", "UP", "T20", "SIM", "PERF", "S"]
+ignore = ["E501", "S101"]
 
 [tool.ruff.lint.per-file-ignores]
-"tests/*" = ["F841"]
+"tests/*" = ["F841", "S101", "S105", "S106", "S110", "PERF102", "SIM105", "SIM117"]
 
 [tool.commitizen]
 name = "cz_conventional_commits"
 version = "2026.1.5.1"
 version_files = ["pyproject.toml:^version"]
 tag_format = "v$version"
+
+[tool.poe]
+poetry_command = ""
+
+[tool.poe.tasks]
+install = { cmd = "uv sync --group dev", help = "의존성 설치" }
+lint = { cmd = "uv run ruff check .", help = "린트" }
+format = { cmd = "uv run ruff format .", help = "포맷" }
+format-check = { cmd = "uv run ruff format --check .", help = "포맷 검사" }
+typecheck = { cmd = "uv run mypy easypay/", help = "타입 체크" }
+test = { cmd = "uv run pytest tests/ -v", help = "테스트" }
+test-cov = { cmd = "uv run pytest tests/ -v --cov=easypay --cov-report=term-missing", help = "테스트 + 커버리지" }
+ci.sequence = ["lint", "format-check", "typecheck", "test"]
+ci.help = "전체 CI"
+
+deps-check = { cmd = "uvx deptry .", help = "미사용 의존성 체크" }
+security = { cmd = "uvx pip-audit", help = "의존성 보안 검사" }
+quality.sequence = ["lint", "typecheck", "deps-check", "security"]
+quality.help = "전체 품질 검사"
+
+build = { cmd = "uv build", help = "wheel 빌드" }
+clean = { shell = "rm -rf dist/ build/ *.egg-info", help = "빌드 아티팩트 정리" }

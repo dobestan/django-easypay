@@ -248,9 +248,10 @@ EASYPAY_SECRET_KEY = "..."  # 절대 코드에 하드코딩 금지
 ### 6.2 1Password 연동 (권장)
 
 ```bash
-# .env.1password.prod
-DYNACONF_EASYPAY_MALL_ID="op://dev/easypay/mall_id"
-DYNACONF_EASYPAY_SECRET_KEY="op://dev/easypay/secret_key"
+# .env.template (프로젝트별 설정)
+# EasyPay 자격 증명은 각 프로젝트의 project-{name} 아이템에 저장
+EASYPAY_MALL_ID="op://dev/project-sajudoctor/easypay_mall_id"
+EASYPAY_SECRET_KEY="op://dev/project-sajudoctor/easypay_secret_key"
 ```
 
 ### 6.3 테스트 환경 분리

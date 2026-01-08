@@ -221,9 +221,7 @@ class AbstractPayment(models.Model):
         """Check if tax should be auto-calculated."""
         if not self.amount:
             return False
-        if self.supply_amount and self.vat_amount:
-            return False
-        return True
+        return not (self.supply_amount and self.vat_amount)
 
     def calculate_tax(self) -> None:
         """Calculate supply_amount and vat_amount from total amount (Korean VAT 10%)."""
