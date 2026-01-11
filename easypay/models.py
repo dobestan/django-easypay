@@ -17,10 +17,13 @@ from __future__ import annotations
 import logging
 import uuid
 from decimal import ROUND_HALF_UP, Decimal
-from typing import Any
+from typing import TYPE_CHECKING, Any, Self
 
 from django.db import models
 from django.utils import timezone
+
+if TYPE_CHECKING:
+    pass
 
 logger: logging.Logger = logging.getLogger(__name__)
 
@@ -385,3 +388,58 @@ class AbstractPayment(models.Model):
                 return f"https://testpgweb.easypay.co.kr/receipt/card?pgTid={self.pg_tid}"
             return f"https://pgweb.easypay.co.kr/receipt/card?pgTid={self.pg_tid}"
         return None
+
+    # -------------------------------------------------------------------------
+    # Client Info Helpers
+    # -------------------------------------------------------------------------
+
+    def set_client_info(self, request: Any) -> None:
+        """
+        Set client IP and user agent from the request object.
+
+        This is a convenience method to populate client tracking fields
+        for fraud detection and audit purposes.
+
+        Usage:
+            order = Order(amount=29900, product=product)
+            order.set_client_info(request)
+            order.save()
+
+        Args:
+            request: Django HttpRequest object
+        """
+        from .utils import get_client_ip, get_user_agent
+
+        self.client_ip = get_client_ip(request)
+        self.client_user_agent = get_user_agent(request)
+
+    @classmethod
+    def create_with_request(cls, request: Any, **kwargs: Any) -> Self:
+        """
+        Create a payment instance with client info automatically populated.
+
+        This factory method creates a new payment object and automatically
+        sets client_ip and client_user_agent from the request.
+
+        Usage:
+            order = Order.create_with_request(
+                request,
+                amount=29900,
+                product=product,
+                user=request.user,
+            )
+            # client_ip and client_user_agent are already set
+
+        Args:
+            request: Django HttpRequest object
+            **kwargs: Fields to pass to the model constructor
+
+        Returns:
+            Created and saved model instance
+        """
+        from .utils import get_client_ip, get_user_agent
+
+        kwargs.setdefault("client_ip", get_client_ip(request))
+        kwargs.setdefault("client_user_agent", get_user_agent(request))
+        # Note: This method should only be called on concrete subclasses
+        return cls.objects.create(**kwargs)  # type: ignore[attr-defined, no-any-return]

@@ -18,7 +18,7 @@ from django.views.decorators.csrf import csrf_exempt
 
 from easypay.client import EasyPayClient
 from easypay.exceptions import EasyPayError
-from easypay.utils import get_client_ip, get_device_type_code, get_user_agent
+from easypay.utils import get_device_type_code
 
 from .models import SandboxPayment
 
@@ -75,13 +75,13 @@ class SandboxPaymentView(View):
 
         goods_name = request.POST.get("goods_name", "테스트 상품") or "테스트 상품"
 
-        # Create sandbox payment
+        # Create sandbox payment with client info auto-populated
+        # Using set_client_info() - the recommended pattern for existing instances
         payment = SandboxPayment.create_test_payment(
             amount=amount,
             goods_name=goods_name,
-            client_ip=get_client_ip(request),
-            client_user_agent=get_user_agent(request),
         )
+        payment.set_client_info(request)  # New pattern: auto-sets client_ip & client_user_agent
         payment.save()
 
         logger.info(

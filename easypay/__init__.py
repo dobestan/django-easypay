@@ -5,7 +5,15 @@ Provides:
 - AbstractPayment model for inheritance
 - EasyPayClient for API communication
 - PaymentAdminMixin for Django admin
+- PaymentViewMixin for view-level client info handling
 - Signals for payment lifecycle events
+
+Usage:
+    from easypay.models import AbstractPayment, PaymentStatus
+    from easypay.client import EasyPayClient
+    from easypay.admin import PaymentAdminMixin
+    from easypay.views import PaymentViewMixin
+    from easypay.utils import get_client_ip, get_user_agent
 
 Requirements:
 - Python 3.12+
