@@ -161,7 +161,7 @@ class TestClientAPILogging:
 
     @responses.activate
     def test_register_failure_logs_error(self, client, payment, caplog):
-        """Failed registration should log at ERROR level."""
+        """Failed registration should log at WARNING level."""
         responses.add(
             responses.POST,
             "https://testpgapi.easypay.co.kr/api/ep9/trades/webpay",
@@ -172,7 +172,7 @@ class TestClientAPILogging:
             status=200,
         )
 
-        with caplog.at_level(logging.ERROR):
+        with caplog.at_level(logging.WARNING):
             with pytest.raises(EasyPayError):
                 client.register_payment(
                     payment=payment,
@@ -180,7 +180,7 @@ class TestClientAPILogging:
                     goods_name="테스트 상품",
                 )
 
-        # Should log error
+        # Should log warning
         assert "E101" in caplog.text or "registration failed" in caplog.text.lower()
 
     @responses.activate

@@ -258,7 +258,7 @@ class EasyPayClient:
                 safe_payload = {
                     k: v for k, v in payload.items() if k not in ("msgAuthValue", "authorizationId")
                 }
-                logger.error(
+                logger.warning(
                     "EasyPay API error",
                     extra={
                         "endpoint": endpoint,
@@ -393,7 +393,7 @@ class EasyPayClient:
 
             return result
         except EasyPayError as e:
-            logger.error(
+            logger.warning(
                 "Payment registration failed",
                 extra={
                     "payment_id": payment.pk,
@@ -500,7 +500,7 @@ class EasyPayClient:
             return result
         except EasyPayError as e:
             # Audit log: payment approval failure
-            logger.error(
+            logger.warning(
                 "Payment approval failed",
                 extra={
                     "payment_id": payment.pk,
