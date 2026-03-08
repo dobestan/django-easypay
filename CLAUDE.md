@@ -64,3 +64,22 @@ EASYPAY_SECRET_KEY = env("EASYPAY_SECRET_KEY")  # HMAC 키 (영업담당자 제�
 data = f"{pg_tid}|{shop_transaction_id}"
 msg_auth_value = hmac.new(secret_key.encode(), data.encode(), hashlib.sha256).hexdigest()
 ```
+
+## Reliability & Performance
+
+### Retry with Exponential Backoff
+
+`EasyPayClient._request()` retries up to 3 times with exponential backoff (1s, 2s, 4s) for **transport-layer failures only**:
+
+| Retried (transient) | NOT retried (business logic) |
+|---------------------|------------------------------|
+| `requests.exceptions.Timeout` | EasyPay `resCd != "0000"` (declined, invalid card, duplicate) |
+| `requests.exceptions.ConnectionError` | HTTP 4xx (bad request, auth failure) |
+| `OSError` / `ConnectionError` | `requests.exceptions.InvalidURL`, SSL cert errors |
+| HTTP 502, 503, 504 (server errors) | Any response with a valid JSON body from EasyPay |
+
+Payment APIs are sensitive — only clear network/infrastructure failures trigger retry. Business logic errors are never retried to avoid duplicate charges.
+
+### Signal Error Isolation
+
+All signal dispatches (`payment_registered`, `payment_approved`, `payment_failed`, `payment_cancelled`) use `_send_signal_safe()` which catches and logs exceptions from signal receivers without propagating them. A failing webhook handler or notification service will not crash the payment flow.

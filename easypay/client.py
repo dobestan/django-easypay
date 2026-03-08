@@ -34,6 +34,7 @@ from __future__ import annotations
 import hashlib
 import hmac
 import logging
+import time
 import uuid
 from datetime import datetime
 from typing import TYPE_CHECKING, Any, Literal, TypedDict
@@ -219,9 +220,31 @@ class EasyPayClient:
             hashlib.sha256,
         ).hexdigest()
 
+    # Transport-layer exceptions that are safe to retry.
+    # These indicate network/infrastructure failures, NOT business logic errors.
+    _RETRYABLE_EXCEPTIONS: tuple[type[Exception], ...] = (
+        requests.exceptions.Timeout,
+        requests.exceptions.ConnectionError,
+        OSError,
+        ConnectionError,
+    )
+
+    # Max retries for transient network failures (1s → 2s → 4s backoff)
+    _MAX_RETRIES: int = 3
+    _RETRY_BACKOFF_BASE: float = 1.0
+
+    def _is_retryable_http_status(self, status_code: int) -> bool:
+        """Check if an HTTP status code is safe to retry (server-side errors only)."""
+        return status_code in (502, 503, 504)
+
     def _request(self, endpoint: str, payload: dict[str, Any]) -> dict[str, Any]:
         """
-        Send API request to EasyPay.
+        Send API request to EasyPay with retry for transient network failures.
+
+        Retries up to 3 times with exponential backoff (1s, 2s, 4s) for
+        transport-layer failures only: timeouts, connection errors, and
+        HTTP 502/503/504. Business logic errors (payment declined, invalid
+        card, duplicate transaction, etc.) are NEVER retried.
 
         Args:
             endpoint: API endpoint path
@@ -231,7 +254,7 @@ class EasyPayClient:
             API response as dict
 
         Raises:
-            EasyPayError: On API error or network failure
+            EasyPayError: On API error or network failure (after retries exhausted)
         """
         url = f"{self.api_url}{endpoint}"
 
@@ -244,59 +267,123 @@ class EasyPayClient:
             },
         )
 
-        try:
-            response = requests.post(
-                url,
-                json=payload,
-                headers={"Content-Type": "application/json"},
-                timeout=self.timeout,
-            )
-            response.raise_for_status()
-            data = response.json()
+        last_exception: Exception | None = None
 
-            if data.get("resCd") != "0000":
-                safe_payload = {
-                    k: v for k, v in payload.items() if k not in ("msgAuthValue", "authorizationId")
-                }
-                logger.warning(
-                    "EasyPay API error",
+        for attempt in range(1, self._MAX_RETRIES + 1):
+            try:
+                response = requests.post(
+                    url,
+                    json=payload,
+                    headers={"Content-Type": "application/json"},
+                    timeout=self.timeout,
+                )
+
+                # Retry on server-side HTTP errors (502, 503, 504)
+                if self._is_retryable_http_status(response.status_code):
+                    logger.warning(
+                        "EasyPay API server error (retryable)",
+                        extra={
+                            "endpoint": endpoint,
+                            "status_code": response.status_code,
+                            "attempt": attempt,
+                            "max_retries": self._MAX_RETRIES,
+                        },
+                    )
+                    last_exception = requests.exceptions.HTTPError(
+                        f"HTTP {response.status_code}", response=response
+                    )
+                    if attempt < self._MAX_RETRIES:
+                        backoff = self._RETRY_BACKOFF_BASE * (2 ** (attempt - 1))
+                        time.sleep(backoff)
+                        continue
+                    # Final attempt failed — fall through to raise
+                    raise EasyPayError(
+                        message=f"API request failed after {self._MAX_RETRIES} retries: "
+                        f"HTTP {response.status_code}",
+                        code="REQUEST_ERROR",
+                    ) from last_exception
+
+                response.raise_for_status()
+                data = response.json()
+
+                # Business logic errors — NEVER retry these
+                if data.get("resCd") != "0000":
+                    safe_payload = {
+                        k: v
+                        for k, v in payload.items()
+                        if k not in ("msgAuthValue", "authorizationId")
+                    }
+                    logger.warning(
+                        "EasyPay API error",
+                        extra={
+                            "endpoint": endpoint,
+                            "res_cd": data.get("resCd"),
+                            "res_msg": data.get("resMsg"),
+                            "request_payload": safe_payload,
+                        },
+                    )
+                    raise EasyPayError(
+                        message=data.get("resMsg", "Unknown error"),
+                        code=data.get("resCd", "UNKNOWN"),
+                        response=data,
+                    )
+
+                logger.info(
+                    "EasyPay API success",
                     extra={
                         "endpoint": endpoint,
                         "res_cd": data.get("resCd"),
-                        "res_msg": data.get("resMsg"),
-                        "request_payload": safe_payload,
+                        **({"attempt": attempt} if attempt > 1 else {}),
                     },
                 )
-                raise EasyPayError(
-                    message=data.get("resMsg", "Unknown error"),
-                    code=data.get("resCd", "UNKNOWN"),
-                    response=data,
+                return dict(data)
+
+            except self._RETRYABLE_EXCEPTIONS as e:
+                last_exception = e
+                logger.warning(
+                    "EasyPay API transient failure",
+                    extra={
+                        "endpoint": endpoint,
+                        "error": str(e),
+                        "error_type": type(e).__name__,
+                        "attempt": attempt,
+                        "max_retries": self._MAX_RETRIES,
+                    },
                 )
 
-            logger.info(
-                "EasyPay API success",
-                extra={
-                    "endpoint": endpoint,
-                    "res_cd": data.get("resCd"),
-                },
-            )
-            return dict(data)
+                if attempt < self._MAX_RETRIES:
+                    backoff = self._RETRY_BACKOFF_BASE * (2 ** (attempt - 1))
+                    time.sleep(backoff)
+                    continue
 
-        except requests.exceptions.Timeout:
-            logger.error("EasyPay API timeout", extra={"endpoint": endpoint})
-            raise EasyPayError(
-                message="API request timeout",
-                code="TIMEOUT",
-            ) from None
-        except requests.exceptions.RequestException as e:
-            logger.error(
-                "EasyPay API request failed",
-                extra={"endpoint": endpoint, "error": str(e)},
-            )
-            raise EasyPayError(
-                message=f"API request failed: {e}",
-                code="REQUEST_ERROR",
-            ) from e
+                # All retries exhausted
+                if isinstance(e, requests.exceptions.Timeout):
+                    raise EasyPayError(
+                        message=f"API request timeout after {self._MAX_RETRIES} retries",
+                        code="TIMEOUT",
+                    ) from None
+                raise EasyPayError(
+                    message=f"API request failed after {self._MAX_RETRIES} retries: {e}",
+                    code="REQUEST_ERROR",
+                ) from e
+
+            except requests.exceptions.RequestException as e:
+                # Non-retryable request errors (e.g., invalid URL, SSL cert error)
+                # Fail immediately — do not retry
+                logger.error(
+                    "EasyPay API request failed (non-retryable)",
+                    extra={"endpoint": endpoint, "error": str(e)},
+                )
+                raise EasyPayError(
+                    message=f"API request failed: {e}",
+                    code="REQUEST_ERROR",
+                ) from e
+
+        # Should not reach here, but guard against it
+        raise EasyPayError(
+            message="API request failed: unexpected retry loop exit",
+            code="REQUEST_ERROR",
+        )
 
     def register_payment(
         self,
@@ -382,10 +469,12 @@ class EasyPayClient:
                 },
             )
 
-            # Fire signal
+            # Fire signal with error isolation — receiver failures must not
+            # prevent the payment flow from completing.
             from .signals import payment_registered
 
-            payment_registered.send(
+            self._send_signal_safe(
+                payment_registered,
                 sender=payment.__class__,
                 payment=payment,
                 auth_page_url=result.get("authPageUrl"),
@@ -481,7 +570,8 @@ class EasyPayClient:
 
             from .signals import payment_approved
 
-            payment_approved.send(
+            self._send_signal_safe(
+                payment_approved,
                 sender=payment.__class__,
                 payment=payment,
                 approval_data={
@@ -510,10 +600,11 @@ class EasyPayClient:
                 },
             )
 
-            # Fire failure signal
+            # Fire failure signal with error isolation
             from .signals import payment_failed
 
-            payment_failed.send(
+            self._send_signal_safe(
+                payment_failed,
                 sender=payment.__class__,
                 payment=payment,
                 error_code=e.code,
@@ -630,7 +721,8 @@ class EasyPayClient:
 
             from .signals import payment_cancelled
 
-            payment_cancelled.send(
+            self._send_signal_safe(
+                payment_cancelled,
                 sender=payment.__class__,
                 payment=payment,
                 cancel_type_code=cancel_type_code,
@@ -757,6 +849,29 @@ class EasyPayClient:
         if "testpgapi" in self.api_url:
             return self.RECEIPT_URL_TEST.format(pg_tid=pg_tid)
         return self.RECEIPT_URL_PROD.format(pg_tid=pg_tid)
+
+    def _send_signal_safe(self, signal: Any, **kwargs: Any) -> None:
+        """
+        Send a Django signal with error isolation.
+
+        If a signal receiver raises an exception, it is logged but does NOT
+        propagate. This prevents a failing webhook handler or notification
+        service from crashing the payment flow.
+
+        Args:
+            signal: Django Signal instance to send
+            **kwargs: Arguments to pass to signal.send()
+        """
+        try:
+            signal.send(**kwargs)
+        except Exception:
+            logger.exception(
+                "Signal receiver error (isolated)",
+                extra={
+                    "signal": getattr(signal, "providing_args", signal.__class__.__name__),
+                    "payment_id": getattr(kwargs.get("payment"), "pk", None),
+                },
+            )
 
     def _get_order_id(self, payment: AbstractPayment) -> str:
         """
